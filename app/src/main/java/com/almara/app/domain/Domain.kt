@@ -124,6 +124,7 @@ sealed interface DateQuery {
     data object LastMonth : DateQuery
     data class Month(val value: YearMonth) : DateQuery
     data class On(val date: LocalDate) : DateQuery
+    data class Range(val start: LocalDate, val end: LocalDate) : DateQuery
 }
 
 data class ParsedQuery(val clauses: List<QueryClause>) {
@@ -154,7 +155,7 @@ fun parseQuery(input: String): QueryParseResult {
                     "today" -> DateQuery.Today; "yesterday" -> DateQuery.Yesterday
                     "this-week", "week" -> DateQuery.ThisWeek; "this-month", "month" -> DateQuery.ThisMonth
                     "last-week" -> DateQuery.LastWeek; "last-month" -> DateQuery.LastMonth
-                    else -> if (Regex("^\\d{4}-\\d{2}$").matches(value)) try { DateQuery.Month(YearMonth.parse(value)) } catch (_: DateTimeParseException) { return QueryParseResult(null, "Invalid month '$value'.") } else try { DateQuery.On(LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE)) } catch (_: DateTimeParseException) { return QueryParseResult(null, "Invalid date '$value'. Use YYYY-MM-DD, YYYY-MM, today, yesterday, last-week, last-month, this-week, or this-month.") }
+                    else -> if (".." in value) { val parts = value.split("..", limit = 2); val start = runCatching { LocalDate.parse(parts[0]) }.getOrNull(); val end = runCatching { LocalDate.parse(parts[1]) }.getOrNull(); if (start == null || end == null || end.isBefore(start)) return QueryParseResult(null, "Invalid date range. Use YYYY-MM-DD..YYYY-MM-DD with the end on or after the start."); DateQuery.Range(start, end) } else if (Regex("^\\d{4}-\\d{2}$").matches(value)) try { DateQuery.Month(YearMonth.parse(value)) } catch (_: DateTimeParseException) { return QueryParseResult(null, "Invalid month '$value'.") } else try { DateQuery.On(LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE)) } catch (_: DateTimeParseException) { return QueryParseResult(null, "Invalid date '$value'. Use YYYY-MM-DD, YYYY-MM, today, yesterday, last-week, this-week, or this-month.") }
                 }
                 clauses += QueryClause.Date(date)
             }
@@ -203,6 +204,7 @@ private fun QueryClause.matches(file: FileRecord, today: LocalDate): Boolean = w
             DateQuery.LastMonth -> YearMonth.from(date) == YearMonth.from(today).minusMonths(1)
             is DateQuery.Month -> YearMonth.from(date) == d.value
             is DateQuery.On -> date == d.date
+            is DateQuery.Range -> date in d.start..d.end
         }
     }
 }

@@ -19,6 +19,8 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,6 +40,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -105,6 +108,7 @@ private fun AlmaraApp() {
     var showWelcome by remember { mutableStateOf(!prefs.getBoolean("welcomed", false)) }
     var optionalName by remember { mutableStateOf(prefs.getString("optional_name", "") ?: "") }
     var dynamicColor by remember { mutableStateOf(prefs.getBoolean("dynamic_color", true)) }
+    var liquidGlass by remember { mutableStateOf(prefs.getBoolean("liquid_glass", false)) }
     var status by remember { mutableStateOf("Your files stay on this phone. Nothing is uploaded.") }
     var indexing by remember { mutableStateOf(false) }
     var selectedFolderId by remember { mutableStateOf<String?>(null) }
@@ -113,6 +117,8 @@ private fun AlmaraApp() {
     var pendingExtractionFiles by remember { mutableStateOf<List<File>?>(null) }
     var requestExtractionPicker by remember { mutableStateOf(false) }
     var pendingExpiry by remember { mutableStateOf<Pair<String, Long>?>(null) }
+    var editingFolder by remember { mutableStateOf<SavedView?>(null) }
+    var timerFolder by remember { mutableStateOf<SavedView?>(null) }
     val permission = if (Build.VERSION.SDK_INT >= 34) arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) else if (Build.VERSION.SDK_INT >= 33) arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO) else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     fun persistViews(next: List<SavedView>) {
         views = next
@@ -218,9 +224,11 @@ private fun AlmaraApp() {
     }
     MaterialTheme(colorScheme = colors) {
         Scaffold(bottomBar = {
-            NavigationBar { listOf(AlmaraTab.HOME to Icons.Rounded.Home, AlmaraTab.SEARCH to Icons.Rounded.Search, AlmaraTab.FOLDERS to Icons.Rounded.Folder, AlmaraTab.SETTINGS to Icons.Rounded.Settings).forEach { (destination, icon) ->
-                NavigationBarItem(selected = tab == destination, onClick = { tab = destination }, icon = { Icon(icon, null) }, label = { Text(destination.name.lowercase().replaceFirstChar { it.uppercase() }) })
-            } }
+            Surface(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp).shadow(12.dp, RoundedCornerShape(28.dp)), shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = if (liquidGlass) .78f else .96f), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .45f)), tonalElevation = 5.dp) {
+                NavigationBar(containerColor = Color.Transparent, tonalElevation = 0.dp) { listOf(AlmaraTab.HOME to Icons.Rounded.Home, AlmaraTab.SEARCH to Icons.Rounded.Search, AlmaraTab.FOLDERS to Icons.Rounded.Folder, AlmaraTab.SETTINGS to Icons.Rounded.Settings).forEach { (destination, icon) ->
+                    NavigationBarItem(selected = tab == destination, onClick = { tab = destination }, icon = { Icon(icon, null) }, label = { Text(destination.name.lowercase().replaceFirstChar { it.uppercase() }) })
+                } }
+            }
         }, floatingActionButton = { if (tab == AlmaraTab.HOME || tab == AlmaraTab.FOLDERS) FloatingActionButton(onClick = { showCreate = true }) { Icon(Icons.Rounded.Add, "Create virtual folder") } }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp)) {
                 Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -229,7 +237,7 @@ private fun AlmaraApp() {
                 }
                 when (tab) {
                     AlmaraTab.HOME -> {
-                        Text("Your files, organized — never relocated.", style = MaterialTheme.typography.bodyMedium)
+                        Text(if (optionalName.isNotBlank()) "Hello, ${optionalName.trim()} — your files are right where they belong." else "Your files, organized — never relocated.", style = MaterialTheme.typography.bodyMedium)
                         Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary)
                             Text("  ${month.format(DateTimeFormatter.ofPattern("MMMM yyyy"))}", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -237,7 +245,6 @@ private fun AlmaraApp() {
                             TextButton(onClick = { month = month.plusMonths(1); selectedDay = null }) { Text("›") }
                         }
                         Heatmap(month, files, selectedDay, onSelect = { selectedDay = if (selectedDay == it) null else it })
-                        SearchBar(query, { query = it }, { tab = AlmaraTab.SEARCH })
                         if (views.isNotEmpty()) ViewChips(views, onSelect = { query = it; tab = AlmaraTab.SEARCH })
                         Text(if (selectedDay != null) "${selectedDay!!.format(DateTimeFormatter.ofPattern("MMM d"))} · files" else "Your files", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 4.dp))
@@ -255,22 +262,24 @@ private fun AlmaraApp() {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(views, key = { it.id }) { folder ->
                             Card(Modifier.fillMaxWidth().combinedClickable(onClick = { selectedFolderId = folder.id; query = folderQuery(folder); tab = AlmaraTab.SEARCH }, onLongClick = { selectedFolderId = folder.id }), shape = RoundedCornerShape(20.dp)) {
                                 Column(Modifier.padding(16.dp)) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Rounded.Folder, null, tint = MaterialTheme.colorScheme.primary); Spacer(Modifier.width(10.dp)); Text(folder.title, Modifier.weight(1f), fontWeight = FontWeight.SemiBold); if (folder.expiresAt > 0) Text("◷", color = MaterialTheme.colorScheme.secondary) }
-                                    Text("${folder.source} · ${folder.kind} · ${folder.period}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                                    Text("${folder.source} · ${folder.kind} · ${periodLabel(folder.period)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                                     val count = remember(files, folder) { runCatching { filterFiles(files, folderQuery(folder), null).size }.getOrDefault(0) }
                                     Text("$count matching files", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                    Row { TextButton(onClick = { selectedFolderId = folder.id; query = folderQuery(folder); tab = AlmaraTab.SEARCH }) { Text("View") }; TextButton(onClick = { setExpiry(folder.id, 60 * 60 * 1000L) }) { Text("1h") }; TextButton(onClick = { setExpiry(folder.id, 24 * 60 * 60 * 1000L) }) { Text("1d") }; TextButton(onClick = { setExpiry(folder.id, 7 * 24 * 60 * 60 * 1000L) }) { Text("1w") }; TextButton(onClick = { persistViews(views.map { if (it.id == folder.id) it.copy(expiresAt = 0L, archiveOnExpiry = false) else it }) }) { Text("Keep") }; TextButton(onClick = { persistViews(views.filterNot { it.id == folder.id }) }) { Text("Remove") } }
+                                    Row { TextButton(onClick = { selectedFolderId = folder.id; query = folderQuery(folder); tab = AlmaraTab.SEARCH }) { Text("Open") }; TextButton(onClick = { editingFolder = folder }) { Text("Edit") }; TextButton(onClick = { timerFolder = folder }) { Text("Timer") }; TextButton(onClick = { persistViews(views.filterNot { it.id == folder.id }); selectedFolderId = null }) { Text("Delete") } }
                                     Row(verticalAlignment = Alignment.CenterVertically) { Text("Archive for 7 days", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall); Switch(folder.archiveOnExpiry, { enabled -> persistViews(views.map { if (it.id == folder.id) it.copy(archiveOnExpiry = enabled) else it }) }) }
                                 }
                             }
                         } }
                         selectedFolderId?.let { id -> Text("Long-press selected folder to remove its saved rule. Original files are always preserved.", style = MaterialTheme.typography.bodySmall) }
                     }
-                    AlmaraTab.SETTINGS -> SettingsScreen(mode, { selected -> mode = selected; dark = selected == ThemeMode.DARK || selected == ThemeMode.AMOLED || (selected == ThemeMode.SYSTEM && systemDark); prefs.edit().putString("theme", selected.name).apply() }, dynamicColor, { enabled -> dynamicColor = enabled; prefs.edit().putBoolean("dynamic_color", enabled).apply() },
+                    AlmaraTab.SETTINGS -> SettingsScreen(mode, { selected -> mode = selected; dark = selected == ThemeMode.DARK || selected == ThemeMode.AMOLED || (selected == ThemeMode.SYSTEM && systemDark); prefs.edit().putString("theme", selected.name).apply(); AlmaraWidgetData.refresh(context) }, dynamicColor, { enabled -> dynamicColor = enabled; prefs.edit().putBoolean("dynamic_color", enabled).apply(); AlmaraWidgetData.refresh(context) }, liquidGlass, { enabled -> liquidGlass = enabled; prefs.edit().putBoolean("liquid_glass", enabled).apply() },
                         onGrant = { permissionLauncher.launch(permission) }, onAddFolder = { treeLauncher.launch(null) }, onRefresh = { scan() }, fileCount = files.size, treeCount = prefs.getStringSet("trees", emptySet()).orEmpty().size)
                 }
             }
         }
-        if (showCreate) CreateViewDialog(files, onDismiss = { showCreate = false }, onCreate = { view -> persistViews(views + view.copy(id = java.util.UUID.randomUUID().toString())); showCreate = false; status = "Maa would be proud." })
+        if (showCreate) CreateViewDialog(files, liquidGlass, onDismiss = { showCreate = false }, onCreate = { view -> persistViews(views + view.copy(id = java.util.UUID.randomUUID().toString())); showCreate = false; status = "Maa would be proud." })
+        editingFolder?.let { original -> CreateViewDialog(files, liquidGlass, initial = original, onDismiss = { editingFolder = null }, onCreate = { updated -> persistViews(views.map { if (it.id == original.id) updated.copy(id = original.id, expiresAt = original.expiresAt, archiveOnExpiry = original.archiveOnExpiry) else it }); editingFolder = null; status = "Folder updated." }) }
+        timerFolder?.let { folder -> TimerDialog(folder, onDismiss = { timerFolder = null }, onSet = { duration -> setExpiry(folder.id, duration); timerFolder = null }, onClear = { persistViews(views.map { if (it.id == folder.id) it.copy(expiresAt = 0L, archiveOnExpiry = false) else it }); timerFolder = null }) }
         if (showWelcome) AlertDialog(onDismissRequest = { showWelcome = false; prefs.edit().putBoolean("welcomed", true).putString("optional_name", optionalName.trim()).apply() }, title = { Text("A tidier digital almara") }, text = { Column { Text("Remember maa's nudge — apna almara seedha karo? Files stay on your phone. No account. No cloud."); OutlinedTextField(optionalName, { optionalName = it.take(40) }, label = { Text("Your name (optional)") }) } }, confirmButton = { TextButton(onClick = { showWelcome = false; prefs.edit().putBoolean("welcomed", true).putString("optional_name", optionalName.trim()).apply() }) { Text("Let's begin") } }, dismissButton = { TextButton(onClick = { optionalName = ""; showWelcome = false; prefs.edit().putBoolean("welcomed", true).putString("optional_name", "").apply() }) { Text("Skip") } })
         conversionTarget?.let { target -> AlertDialog(onDismissRequest = { conversionTarget = null }, title = { Text("Offline tools · ${target.name}") }, text = { Column { Text("A new local copy is made; the original is never changed.", style = MaterialTheme.typography.bodySmall); conversionActions(target).forEach { action -> TextButton(onClick = { runConversion(target, action) }) { Text(action) } } } }, confirmButton = { TextButton(onClick = { conversionTarget = null }) { Text("Close") } }) }
     }
@@ -326,11 +335,12 @@ private fun AlmaraApp() {
 
 @Composable private fun EmptyMessage(title: String, detail: String) { Column(Modifier.fillMaxWidth().padding(26.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text(title, style = MaterialTheme.typography.titleMedium); Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary) } }
 
-@Composable private fun SettingsScreen(mode: ThemeMode, onMode: (ThemeMode) -> Unit, dynamicColor: Boolean, onDynamicColor: (Boolean) -> Unit, onGrant: () -> Unit, onAddFolder: () -> Unit, onRefresh: () -> Unit, fileCount: Int, treeCount: Int) {
+@Composable private fun SettingsScreen(mode: ThemeMode, onMode: (ThemeMode) -> Unit, dynamicColor: Boolean, onDynamicColor: (Boolean) -> Unit, liquidGlass: Boolean, onLiquidGlass: (Boolean) -> Unit, onGrant: () -> Unit, onAddFolder: () -> Unit, onRefresh: () -> Unit, fileCount: Int, treeCount: Int) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { Text("Appearance", style = MaterialTheme.typography.titleLarge); Text("Choose how Almara feels on this phone.", style = MaterialTheme.typography.bodyMedium) }
         item { Column { ThemeMode.values().forEach { option -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { RadioButton(mode == option, { onMode(option) }); Text(when(option) { ThemeMode.SYSTEM -> "System"; ThemeMode.LIGHT -> "Light"; ThemeMode.DARK -> "Dark"; ThemeMode.AMOLED -> "AMOLED · pure black" }, Modifier.weight(1f)); if (mode == option) Text("✓") } } } }
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text("Wallpaper-derived colors", Modifier.weight(1f)); Switch(dynamicColor, onDynamicColor, enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) } }
+        item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Liquid Glass", fontWeight = FontWeight.Medium); Text("Soft translucent depth for floating surfaces. Off by default.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }; Switch(liquidGlass, onLiquidGlass) } }
         item { HorizontalDivider(); Text("Local library", style = MaterialTheme.typography.titleLarge); Text("$fileCount indexed references · $treeCount chosen folders", style = MaterialTheme.typography.bodyMedium) }
         item { Button(onClick = onGrant, modifier = Modifier.fillMaxWidth()) { Text("Allow media access") } }
         item { OutlinedButton(onClick = onAddFolder, modifier = Modifier.fillMaxWidth()) { Text("Add a documents folder") } }
@@ -340,19 +350,24 @@ private fun AlmaraApp() {
     }
 }
 
-@Composable private fun CreateViewDialog(files: List<LocalFile>, onDismiss: () -> Unit, onCreate: (SavedView) -> Unit) {
-    var source by remember { mutableStateOf("All") }; var kind by remember { mutableStateOf("All") }; var period by remember { mutableStateOf("This month") }; var name by remember { mutableStateOf("") }
-    val suggestion = "$source · $kind · $period"
-    val ruleQuery = listOfNotNull(if (source == "All") null else "source:${source.lowercase()}", if (kind == "All") null else "type:${kind.lowercase().removeSuffix("s")}", when(period) { "Today" -> "date:today"; "This week" -> "date:this-week"; else -> "date:this-month" }).joinToString(" ")
-    val matches = remember(files, source, kind, period) { runCatching { filterFiles(files, ruleQuery, null).size }.getOrDefault(0) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("New virtual folder") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+@Composable private fun CreateViewDialog(files: List<LocalFile>, liquidGlass: Boolean, initial: SavedView? = null, onDismiss: () -> Unit, onCreate: (SavedView) -> Unit) {
+    var source by remember(initial) { mutableStateOf(initial?.source ?: "All") }; var kind by remember(initial) { mutableStateOf(initial?.kind ?: "All") }; var period by remember(initial) { mutableStateOf(if (initial?.period?.startsWith("Custom:") == true) "Custom range" else initial?.period ?: "This month") }; var name by remember(initial) { mutableStateOf(initial?.title ?: "") }
+    val customParts = initial?.period?.removePrefix("Custom:")?.split("..")
+    var customStart by remember(initial) { mutableStateOf(customParts?.getOrNull(0) ?: LocalDate.now().withDayOfMonth(1).toString()) }
+    var customEnd by remember(initial) { mutableStateOf(customParts?.getOrNull(1) ?: LocalDate.now().toString()) }
+    val savedPeriod = if (period == "Custom range") "Custom:$customStart..$customEnd" else period
+    val suggestion = "$source · $kind · ${if (period == "Custom range") "Custom range" else period}"
+    val ruleQuery = folderQuery(SavedView("", "", source, kind, savedPeriod))
+    val matches = remember(files, source, kind, period, customStart, customEnd) { runCatching { filterFiles(files, ruleQuery, null).size }.getOrDefault(0) }
+    AlertDialog(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surface.copy(alpha = if (liquidGlass) .88f else 1f), title = { Text(if (initial == null) "New virtual folder" else "Edit virtual folder") }, text = { Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Files remain exactly where they are.", style = MaterialTheme.typography.bodySmall)
         Text("Source", fontWeight = FontWeight.SemiBold); ChipChoices(listOf("All", "WhatsApp", "Telegram", "Camera", "Screenshot", "Download"), source) { source = it }
         Text("Type", fontWeight = FontWeight.SemiBold); ChipChoices(listOf("All", "Images", "PDFs", "Docs", "Audio", "Archives", "Text"), kind) { kind = it }
-        Text("Time", fontWeight = FontWeight.SemiBold); ChipChoices(listOf("Today", "This week", "This month"), period) { period = it }
+        Text("Time range", fontWeight = FontWeight.SemiBold); ChipChoices(listOf("Today", "This week", "This month", "Custom range"), period) { period = it }
+        if (period == "Custom range") { OutlinedTextField(customStart, { customStart = it }, label = { Text("From · YYYY-MM-DD") }, singleLine = true); OutlinedTextField(customEnd, { customEnd = it }, label = { Text("To · YYYY-MM-DD") }, singleLine = true) }
         OutlinedTextField(name, { name = it }, label = { Text("Folder name") }, placeholder = { Text(suggestion) }, singleLine = true)
         Text("Preview · $matches matching files", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-    } }, confirmButton = { TextButton(onClick = { onCreate(SavedView("", name.ifBlank { suggestion }, source, kind, period)) }) { Text("Create") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+    } }, confirmButton = { TextButton(onClick = { runCatching { LocalDate.parse(customStart); LocalDate.parse(customEnd) }.onSuccess { start -> val end = runCatching { LocalDate.parse(customEnd) }.getOrNull(); if (period != "Custom range" || (end != null && !end.isBefore(start))) onCreate(SavedView(initial?.id ?: "", name.ifBlank { suggestion }, source, kind, savedPeriod, initial?.expiresAt ?: 0L, initial?.archived ?: false, initial?.archiveOnExpiry ?: false)) } }) { Text(if (initial == null) "Create" else "Save") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 @Composable private fun ChipChoices(values: List<String>, selected: String, choose: (String) -> Unit) { Column { values.chunked(3).forEach { row -> Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) { row.forEach { value -> FilterChip(selected == value, { choose(value) }, label = { Text(value, maxLines = 1) }) } } } } }
 
@@ -406,13 +421,18 @@ private fun filterFiles(files: List<LocalFile>, query: String, day: LocalDate?):
 }
 private fun dateMatches(day: LocalDate, value: String): Boolean { val now = LocalDate.now(); return when(value.lowercase()) { "today" -> day == now; "yesterday" -> day == now.minusDays(1); "last-week" -> day in now.minusDays(7)..now; "this-week" -> day >= now.with(java.time.DayOfWeek.MONDAY); "last-month" -> YearMonth.from(day) == YearMonth.now().minusMonths(1); "this-month" -> YearMonth.from(day) == YearMonth.now(); else -> runCatching { if (value.length == 7) YearMonth.parse(value) == YearMonth.from(day) else LocalDate.parse(value) == day }.getOrElse { throw IllegalArgumentException("Invalid date '$value'. Use today, this-week, YYYY-MM-DD, or YYYY-MM.") } } }
 private fun sizeMatches(bytes: Long, value: String): Boolean { val m = Regex("([<>])(\\d+)(kb|mb|gb)", RegexOption.IGNORE_CASE).matchEntire(value) ?: throw IllegalArgumentException("Invalid size '$value'. Example: size:>5mb"); val factor = when(m.groupValues[3].lowercase()) { "kb" -> 1024L; "mb" -> 1024L*1024; else -> 1024L*1024*1024 }; val amount = m.groupValues[2].toLongOrNull() ?: throw IllegalArgumentException("Size is too large."); return if (m.groupValues[1] == ">") bytes > amount * factor else bytes < amount * factor }
-private fun folderQuery(v: SavedView) = listOfNotNull(if(v.source == "All") null else "source:${v.source.lowercase()}", if(v.kind == "All") null else "type:${v.kind.lowercase().removeSuffix("s")}", when(v.period) { "Today" -> "date:today"; "This week" -> "date:this-week"; "This month" -> "date:this-month"; else -> null }).joinToString(" ")
+private fun folderQuery(v: SavedView) = listOfNotNull(if(v.source == "All") null else "source:${v.source.lowercase()}", if(v.kind == "All") null else "type:${v.kind.lowercase().removeSuffix("s")}", when { v.period.startsWith("Custom:") -> "date:${v.period.removePrefix("Custom:")}"; v.period == "Today" -> "date:today"; v.period == "This week" -> "date:this-week"; v.period == "This month" -> "date:this-month"; else -> null }).joinToString(" ")
+private fun periodLabel(value: String): String = if (value.startsWith("Custom:")) "Custom · ${value.removePrefix("Custom:").replace("..", " – ")}" else value
 private fun openFile(context: android.content.Context, file: LocalFile) { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(file.uri, file.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) } }
 private fun shareFile(context: android.content.Context, file: LocalFile) { runCatching { context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType(file.mime).putExtra(Intent.EXTRA_STREAM, file.uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share file")) } }
 private fun fileIcon(mime: String) = when { mime.startsWith("image/") -> "▧"; mime == "application/pdf" -> "▤"; mime.startsWith("audio/") -> "♫"; mime.startsWith("video/") -> "▷"; else -> "▣" }
 private fun formatBytes(bytes: Long) = when { bytes >= 1_000_000 -> String.format(Locale.getDefault(), "%.1f MB", bytes / 1_000_000.0); bytes >= 1_000 -> "${bytes / 1_000} KB"; else -> "$bytes B" }
 private fun displaySource(value: String) = when (value.lowercase(Locale.ROOT)) { "whatsapp" -> "WhatsApp"; "telegram" -> "Telegram"; "camera" -> "Camera"; "download" -> "Download"; "screenshot" -> "Screenshot"; else -> "Other" }
 private fun loadViews(prefs: android.content.SharedPreferences): List<SavedView> = prefs.getStringSet("views", emptySet()).orEmpty().mapNotNull { raw -> raw.split("|", limit = 8).takeIf { it.size >= 5 }?.let { SavedView(it[0], it[1], it[2], it[3], it[4], it.getOrNull(5)?.toLongOrNull() ?: 0L, it.getOrNull(6)?.toBoolean() ?: false, it.getOrNull(7)?.toBoolean() ?: false) } }
+
+@Composable private fun TimerDialog(folder: SavedView, onDismiss: () -> Unit, onSet: (Long) -> Unit, onClear: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Folder timer") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Text("Only this saved folder expires. Original files are never touched."); Text("Choose when to remove this view:", style = MaterialTheme.typography.bodySmall) } }, confirmButton = { Row { TextButton(onClick = { onSet(60L * 60 * 1000) }) { Text("1 hour") }; TextButton(onClick = { onSet(24L * 60 * 60 * 1000) }) { Text("1 day") }; TextButton(onClick = { onSet(7L * 24 * 60 * 60 * 1000) }) { Text("1 week") } } }, dismissButton = { Row { if (folder.expiresAt > 0) TextButton(onClick = onClear) { Text("Cancel timer") }; TextButton(onClick = onDismiss) { Text("Close") } } })
+}
 
 private suspend fun storeViewsInDatabase(context: android.content.Context, views: List<SavedView>) {
     SQLiteDatabase.loadLibs(context)
@@ -434,7 +454,7 @@ private suspend fun loadViewsFromDatabase(context: android.content.Context): Lis
         return db.folderDao().getAll().mapNotNull { folder ->
             val rule = rules[folder.ruleId ?: folder.id] ?: return@mapNotNull null
             val clauses = rule.query.split(Regex("\\s+")).filter { it.contains(':') }.associate { it.substringBefore(':') to it.substringAfter(':') }
-            SavedView(folder.id, folder.name, clauses["source"]?.let(::displaySource) ?: "All", clauses["type"]?.replaceFirstChar { it.uppercase() } ?: "All", when (clauses["date"]) { "today" -> "Today"; "this-week" -> "This week"; else -> "This month" }, folder.expiresAtMillis ?: 0L, folder.archivedUntilMillis != null, folder.archiveOnExpiry)
+            SavedView(folder.id, folder.name, clauses["source"]?.let(::displaySource) ?: "All", clauses["type"]?.replaceFirstChar { it.uppercase() } ?: "All", when (val date = clauses["date"]) { "today" -> "Today"; "this-week" -> "This week"; else -> if (date?.contains("..") == true) "Custom:$date" else "This month" }, folder.expiresAtMillis ?: 0L, folder.archivedUntilMillis != null, folder.archiveOnExpiry)
         }
     } finally { db.close() }
 }
