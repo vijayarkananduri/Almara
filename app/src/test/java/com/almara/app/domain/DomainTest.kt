@@ -77,4 +77,12 @@ class DomainTest {
         assertTrue(rule.matches(matching))
         assertFalse(rule.matches(other))
     }
+
+    @Test fun multiSelectSourceAndTypeFiltersUseOrWithinEachCategory() {
+        val query = parseQuery("source:whatsapp,telegram type:pdf,document").query!!
+        assertTrue(query.matches(FileRecord("report.pdf", source = Source.TELEGRAM, type = FileType.PDF)))
+        assertTrue(query.matches(FileRecord("notes.docx", source = Source.WHATSAPP, type = FileType.DOCUMENT)))
+        assertFalse(query.matches(FileRecord("report.pdf", source = Source.CAMERA, type = FileType.PDF)))
+        assertFalse(query.matches(FileRecord("photo.jpg", source = Source.TELEGRAM, type = FileType.IMAGE)))
+    }
 }

@@ -109,6 +109,8 @@ sealed interface QueryClause {
     data class Date(val value: DateQuery) : QueryClause
     data class SourceIs(val value: Source) : QueryClause
     data class TypeIs(val value: FileType) : QueryClause
+    data class SourceAny(val values: Set<Source>) : QueryClause
+    data class TypeAny(val values: Set<FileType>) : QueryClause
     data class NameContains(val value: String) : QueryClause
     data class Size(val operator: Comparison, val bytes: Long) : QueryClause
     data class Text(val value: String) : QueryClause
@@ -159,8 +161,14 @@ fun parseQuery(input: String): QueryParseResult {
                 }
                 clauses += QueryClause.Date(date)
             }
-            "source" -> clauses += QueryClause.SourceIs(Source.parse(value) ?: return QueryParseResult(null, "Unknown source '$value'. Try whatsapp, telegram, camera, download, or other."))
-            "type" -> clauses += QueryClause.TypeIs(FileType.parse(value) ?: return QueryParseResult(null, "Unknown file type '$value'."))
+            "source" -> {
+                val sources = value.split(',').map { Source.parse(it) ?: return QueryParseResult(null, "Unknown source '$it'. Try whatsapp, telegram, camera, download, or other.") }.toSet()
+                clauses += if (sources.size == 1) QueryClause.SourceIs(sources.first()) else QueryClause.SourceAny(sources)
+            }
+            "type" -> {
+                val types = value.split(',').map { FileType.parse(it) ?: return QueryParseResult(null, "Unknown file type '$it'.") }.toSet()
+                clauses += if (types.size == 1) QueryClause.TypeIs(types.first()) else QueryClause.TypeAny(types)
+            }
             "name" -> clauses += QueryClause.NameContains(value)
             "size" -> {
                 val m = Regex("^(>=|<=|>|<|=)?(.+)$").matchEntire(value)!!
@@ -192,6 +200,8 @@ private fun QueryClause.matches(file: FileRecord, today: LocalDate): Boolean = w
     is QueryClause.NameContains -> file.name.contains(value, ignoreCase = true)
     is QueryClause.SourceIs -> value == Source.ALL || file.source == value
     is QueryClause.TypeIs -> value == FileType.ALL || file.type == value
+    is QueryClause.SourceAny -> Source.ALL in values || file.source in values
+    is QueryClause.TypeAny -> FileType.ALL in values || file.type in values
     is QueryClause.Size -> when (operator) { Comparison.LT -> file.sizeBytes < bytes; Comparison.LTE -> file.sizeBytes <= bytes; Comparison.EQ -> file.sizeBytes == bytes; Comparison.GTE -> file.sizeBytes >= bytes; Comparison.GT -> file.sizeBytes > bytes }
     is QueryClause.Date -> {
         val date = file.date

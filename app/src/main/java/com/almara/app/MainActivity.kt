@@ -108,8 +108,11 @@ private fun AlmaraApp() {
     var showCreate by remember { mutableStateOf(false) }
     var showWelcome by remember { mutableStateOf(!prefs.getBoolean("welcomed", false)) }
     var optionalName by remember { mutableStateOf(prefs.getString("optional_name", "") ?: "") }
-    var dynamicColor by remember { mutableStateOf(prefs.getBoolean("dynamic_color", true)) }
+    var dynamicColor by remember { mutableStateOf(prefs.getBoolean("dynamic_color", false)) }
+    var paletteRefresh by remember { mutableStateOf(0) }
     var recentFilesEnabled by remember { mutableStateOf(prefs.getBoolean("show_recent_files", true)) }
+    var puffyButtons by remember { mutableStateOf(prefs.getBoolean("puffy_buttons", false)) }
+    var startupSetupStage by remember { mutableStateOf(0) }
     var status by remember { mutableStateOf("Your files stay on this phone. Nothing is uploaded.") }
     var indexing by remember { mutableStateOf(false) }
     var selectedFolderId by remember { mutableStateOf<String?>(null) }
@@ -147,16 +150,18 @@ private fun AlmaraApp() {
             }
             files = scanned.distinctBy { it.uri.toString() }.sortedByDescending { it.modified }
             indexing = false
-            status = if (files.isEmpty()) "No files found yet. Choose media access or add a folder." else "${files.size} encrypted local references · files never moved"
+            status = if (files.isEmpty()) "No files found yet. Use Android's access prompt, then refresh the index." else "${files.size} encrypted local references · files never moved"
             AlmaraWidgetData.refresh(context)
         }
     }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
         if (result.values.any { it }) scan() else status = "Media access is off. You can enable it in Android settings."
+        if (startupSetupStage == 1) startupSetupStage = 2
     }
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         pendingExpiry?.let { (id, duration) -> if (granted) persistViews(views.map { if (it.id == id) it.copy(expiresAt = System.currentTimeMillis() + duration, archived = false) else it }) else status = "Expiry reminder permission is off." }
         pendingExpiry = null
+        if (startupSetupStage == 2) startupSetupStage = 3
     }
     fun setExpiry(id: String, duration: Long) {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) { pendingExpiry = id to duration; notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
@@ -206,8 +211,18 @@ private fun AlmaraApp() {
                 prefs.edit().putStringSet("trees", trees).apply(); scan(); status = "Folder added. Almara only reads its contents."
             }
         }
+        if (startupSetupStage == 3) startupSetupStage = 4
     }
     LaunchedEffect(requestExtractionPicker) { if (requestExtractionPicker) { requestExtractionPicker = false; treeLauncher.launch(null) } }
+    LaunchedEffect(showWelcome, startupSetupStage) {
+        if (!showWelcome && startupSetupStage == 0 && !prefs.getBoolean("startup_access_setup_done", false)) startupSetupStage = 1
+        when (startupSetupStage) {
+            1 -> if (permission.any { ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }) permissionLauncher.launch(permission) else startupSetupStage = 2
+            2 -> if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) else startupSetupStage = 3
+            3 -> if (prefs.getStringSet("trees", emptySet()).orEmpty().isEmpty()) treeLauncher.launch(null) else startupSetupStage = 4
+            4 -> prefs.edit().putBoolean("startup_access_setup_done", true).apply()
+        }
+    }
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) { ConversionService(context).cleanupTemporaryOutputs() }
         val legacy = loadViews(prefs)
@@ -217,19 +232,22 @@ private fun AlmaraApp() {
         if (permission.any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED } || prefs.getStringSet("trees", emptySet()).orEmpty().isNotEmpty()) scan()
     }
 
-    val colors = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && mode != ThemeMode.AMOLED) { if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context) } else when (mode) {
-        ThemeMode.LIGHT -> lightColorScheme(primary = Color(0xFF81502D), secondary = Color(0xFF536B48), background = Color(0xFFFAF5EB), surface = Color(0xFFFFFCF6))
+    val colors = remember(dynamicColor, dark, mode, paletteRefresh) { if (paletteRefresh >= 0 && dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && mode != ThemeMode.AMOLED) { if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context) } else when (mode) {
+        ThemeMode.LIGHT -> lightColorScheme(primary = Color(0xFF9B4527), secondary = Color(0xFF586B45), background = Color(0xFFFAF6EF), surface = Color(0xFFFFFDF8))
         ThemeMode.AMOLED -> darkColorScheme(primary = Color(0xFFE6A86C), secondary = Color(0xFFB5C9A5), background = Color.Black, surface = Color(0xFF080807))
-        ThemeMode.DARK -> darkColorScheme(primary = Color(0xFFE6A86C), secondary = Color(0xFFB5C9A5), background = Color(0xFF151311), surface = Color(0xFF211E1A))
-        ThemeMode.SYSTEM -> if (dark) darkColorScheme(primary = Color(0xFFE6A86C), secondary = Color(0xFFB5C9A5), background = Color(0xFF151311), surface = Color(0xFF211E1A)) else lightColorScheme(primary = Color(0xFF81502D), secondary = Color(0xFF536B48), background = Color(0xFFFAF5EB), surface = Color(0xFFFFFCF6))
-    }
+        ThemeMode.DARK -> darkColorScheme(primary = Color(0xFFE6A86C), secondary = Color(0xFFB5C9A5), background = Color(0xFF181411), surface = Color(0xFF211C18))
+        ThemeMode.SYSTEM -> if (dark) darkColorScheme(primary = Color(0xFFE6A86C), secondary = Color(0xFFB5C9A5), background = Color(0xFF181411), surface = Color(0xFF211C18)) else lightColorScheme(primary = Color(0xFF9B4527), secondary = Color(0xFF586B45), background = Color(0xFFFAF6EF), surface = Color(0xFFFFFDF8))
+    } }
     MaterialTheme(colorScheme = colors) {
         Scaffold(bottomBar = {
-            FloatingPillNav(tab, onSelect = { tab = it })
+            Column {
+                Text("Almara v${BuildConfig.VERSION_NAME} · @Vijayarka", Modifier.fillMaxWidth().padding(top = 2.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                FloatingPillNav(tab, onSelect = { tab = it })
+            }
         }, floatingActionButton = { if (tab == AlmaraTab.HOME || tab == AlmaraTab.FOLDERS) FloatingActionButton(onClick = { showCreate = true }) { Icon(Icons.Rounded.Add, "Create virtual folder") } }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp)) {
                 Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) { Text("Almara", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Text("Smart Sedha.", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary); Text("Almara v1.0 · @vijayarka", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline) }
+                    Column(Modifier.weight(1f)) { Text("Almara", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Text("Smart Sedha.", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary) }
                     if (indexing) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                 }
                 when (tab) {
@@ -257,7 +275,7 @@ private fun AlmaraApp() {
                         Text("Virtual folders are saved rules. Your files stay put.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 12.dp))
                         if (views.isEmpty()) EmptyMessage("No virtual folders yet.", "Create one with +. Files are never copied or moved.")
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(views, key = { it.id }) { folder ->
-                            Card(Modifier.fillMaxWidth().combinedClickable(onClick = { selectedFolderId = folder.id; query = folderQuery(folder); tab = AlmaraTab.SEARCH }, onLongClick = { selectedFolderId = folder.id }), shape = RoundedCornerShape(20.dp)) {
+                            Card(Modifier.fillMaxWidth().combinedClickable(onClick = { selectedFolderId = folder.id; query = folderQuery(folder); tab = AlmaraTab.SEARCH }, onLongClick = { selectedFolderId = folder.id }), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                                 Column(Modifier.padding(16.dp)) { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Rounded.Folder, null, tint = MaterialTheme.colorScheme.primary); Spacer(Modifier.width(10.dp)); Text(folder.title, Modifier.weight(1f), fontWeight = FontWeight.SemiBold); if (folder.expiresAt > 0) Text("◷", color = MaterialTheme.colorScheme.secondary) }
                                     Text("${folder.source} · ${folder.kind} · ${periodLabel(folder.period)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                                     val count = remember(files, folder) { runCatching { filterFiles(files, folderQuery(folder), null).size }.getOrDefault(0) }
@@ -269,26 +287,26 @@ private fun AlmaraApp() {
                         } }
                         selectedFolderId?.let { id -> Text("Long-press selected folder to remove its saved rule. Original files are always preserved.", style = MaterialTheme.typography.bodySmall) }
                     }
-                    AlmaraTab.SETTINGS -> SettingsScreen(mode, { selected -> mode = selected; dark = selected == ThemeMode.DARK || selected == ThemeMode.AMOLED || (selected == ThemeMode.SYSTEM && systemDark); prefs.edit().putString("theme", selected.name).apply(); AlmaraWidgetData.refresh(context) }, dynamicColor, { enabled -> dynamicColor = enabled; prefs.edit().putBoolean("dynamic_color", enabled).apply(); AlmaraWidgetData.refresh(context) }, recentFilesEnabled, { enabled -> recentFilesEnabled = enabled; prefs.edit().putBoolean("show_recent_files", enabled).apply() },
-                        onGrant = { permissionLauncher.launch(permission) }, onAddFolder = { treeLauncher.launch(null) }, onRefresh = { scan() }, onCheckUpdates = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/vijayarkananduri/Almara/releases"))) } }, fileCount = files.size, treeCount = prefs.getStringSet("trees", emptySet()).orEmpty().size)
+                    AlmaraTab.SETTINGS -> SettingsScreen(mode, { selected -> mode = selected; dark = selected == ThemeMode.DARK || selected == ThemeMode.AMOLED || (selected == ThemeMode.SYSTEM && systemDark); prefs.edit().putString("theme", selected.name).apply(); AlmaraWidgetData.refresh(context) }, dynamicColor, { enabled -> dynamicColor = enabled; prefs.edit().putBoolean("dynamic_color", enabled).apply(); paletteRefresh++; AlmaraWidgetData.refresh(context) }, puffyButtons, { enabled -> puffyButtons = enabled; prefs.edit().putBoolean("puffy_buttons", enabled).apply() }, recentFilesEnabled, { enabled -> recentFilesEnabled = enabled; prefs.edit().putBoolean("show_recent_files", enabled).apply() }, onWallpaperRefresh = { dynamicColor = true; prefs.edit().putBoolean("dynamic_color", true).apply(); paletteRefresh++; AlmaraWidgetData.refresh(context) }, onRefresh = { scan() }, onCheckUpdates = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/vijayarkananduri/Almara/releases"))) } }, fileCount = files.size)
                 }
             }
         }
         if (showCreate) CreateViewDialog(files, onDismiss = { showCreate = false }, onCreate = { view -> persistViews(views + view.copy(id = java.util.UUID.randomUUID().toString())); showCreate = false; status = "Maa would be proud." })
         editingFolder?.let { original -> CreateViewDialog(files, initial = original, onDismiss = { editingFolder = null }, onCreate = { updated -> persistViews(views.map { if (it.id == original.id) updated.copy(id = original.id, expiresAt = original.expiresAt, archiveOnExpiry = original.archiveOnExpiry) else it }); editingFolder = null; status = "Folder updated." }) }
         timerFolder?.let { folder -> TimerDialog(folder, onDismiss = { timerFolder = null }, onSet = { duration -> setExpiry(folder.id, duration); timerFolder = null }, onClear = { persistViews(views.map { if (it.id == folder.id) it.copy(expiresAt = 0L, archiveOnExpiry = false) else it }); timerFolder = null }) }
-        if (showWelcome) AlertDialog(onDismissRequest = { showWelcome = false; prefs.edit().putBoolean("welcomed", true).putString("optional_name", optionalName.trim()).apply() }, title = { Text("A tidier digital almara") }, text = { Column { Text("Remember maa's nudge — apna almara seedha karo? Files stay on your phone. No account. No cloud."); OutlinedTextField(optionalName, { optionalName = it.take(40) }, label = { Text("Your name (optional)") }) } }, confirmButton = { TextButton(onClick = { showWelcome = false; prefs.edit().putBoolean("welcomed", true).putString("optional_name", optionalName.trim()).apply() }) { Text("Let's begin") } }, dismissButton = { TextButton(onClick = { optionalName = ""; showWelcome = false; prefs.edit().putBoolean("welcomed", true).putString("optional_name", "").apply() }) { Text("Skip") } })
+        if (showWelcome) AlertDialog(onDismissRequest = { showWelcome = false; prefs.edit().putBoolean("welcomed", true).putString("optional_name", optionalName.trim()).apply() }, title = { Text("A tidier digital almara") }, text = { Column { Text("Remember maa's nudge — apna almara seedha karo? Files stay on your phone. No account. No cloud."); Text("Next, Android will ask for media access, notifications, and a folder you choose for documents. Protected system folders stay inaccessible.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary); OutlinedTextField(optionalName, { optionalName = it.take(40) }, label = { Text("Your name (optional)") }) } }, confirmButton = { TextButton(onClick = { showWelcome = false; prefs.edit().putBoolean("welcomed", true).putString("optional_name", optionalName.trim()).apply() }) { Text("Continue") } }, dismissButton = { TextButton(onClick = { optionalName = ""; showWelcome = false; prefs.edit().putBoolean("welcomed", true).putString("optional_name", "").apply() }) { Text("Skip") } })
     }
 }
 
 @Composable private fun FloatingPillNav(selected: AlmaraTab, onSelect: (AlmaraTab) -> Unit) {
     val entries = listOf(AlmaraTab.HOME to Icons.Rounded.Home, AlmaraTab.SEARCH to Icons.Rounded.Search, AlmaraTab.FOLDERS to Icons.Rounded.Folder, AlmaraTab.SETTINGS to Icons.Rounded.Settings)
-    Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 10.dp).shadow(18.dp, RoundedCornerShape(30.dp))) {
-        Surface(shape = RoundedCornerShape(30.dp), color = MaterialTheme.colorScheme.surface, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .7f)), tonalElevation = 8.dp) {
+    val puffy = LocalContext.current.getSharedPreferences("almara", 0).getBoolean("puffy_buttons", false)
+    Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 12.dp).shadow(if (puffy) 8.dp else 2.dp, RoundedCornerShape(28.dp))) {
+        Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .65f)), tonalElevation = if (puffy) 4.dp else 1.dp) {
             Row(Modifier.fillMaxWidth().height(66.dp).padding(horizontal = 8.dp, vertical = 7.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                 entries.forEach { (destination, icon) ->
                     val active = selected == destination
-                    Surface(onClick = { onSelect(destination) }, modifier = Modifier.weight(1f).fillMaxHeight().padding(horizontal = 3.dp), shape = RoundedCornerShape(22.dp), color = if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, shadowElevation = if (active) 4.dp else 0.dp, border = if (active) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .2f)) else null) {
+                    Surface(onClick = { onSelect(destination) }, modifier = Modifier.weight(1f).fillMaxHeight().padding(horizontal = 3.dp), shape = RoundedCornerShape(20.dp), color = if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, shadowElevation = if (active && puffy) 2.dp else 0.dp, border = if (active) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .16f)) else null) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Icon(icon, contentDescription = destination.name.lowercase(), tint = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
                             Text(destination.name.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
@@ -301,19 +319,15 @@ private fun AlmaraApp() {
 }
 
 @Composable private fun DepthActionButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(52.dp)) {
-        Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(48.dp), shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .72f)) {}
-        Surface(onClick = onClick, modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(48.dp).padding(bottom = 4.dp), shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer, shadowElevation = 5.dp, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .18f))) {
-            Box(contentAlignment = Alignment.Center) { Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) }
-        }
-    }
-}
-
-@Composable private fun TactileChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(44.dp)) {
-        Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(40.dp), shape = RoundedCornerShape(16.dp), color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = .75f) else MaterialTheme.colorScheme.surfaceVariant) {}
-        Surface(onClick = onClick, modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(40.dp).padding(bottom = 3.dp), shape = RoundedCornerShape(16.dp), color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface, contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface, shadowElevation = if (selected) 3.dp else 1.dp, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .65f))) {
-            Box(contentAlignment = Alignment.Center) { Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false) }
+    val puffy = LocalContext.current.getSharedPreferences("almara", 0).getBoolean("puffy_buttons", false)
+    if (!puffy) {
+        Button(onClick = onClick, modifier = modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(16.dp), elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)) { Text(label, style = MaterialTheme.typography.labelLarge) }
+    } else {
+        Box(modifier.fillMaxWidth().height(50.dp)) {
+            Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(46.dp), shape = RoundedCornerShape(17.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = .38f)) {}
+            Surface(onClick = onClick, modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(47.dp).padding(bottom = 3.dp), shape = RoundedCornerShape(17.dp), color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer, shadowElevation = 2.dp, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .12f))) {
+                Box(contentAlignment = Alignment.Center) { Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium) }
+            }
         }
     }
 }
@@ -351,7 +365,7 @@ private fun timeGreeting(name: String): String {
         repeat(rows) { week -> Row(Modifier.fillMaxWidth()) { repeat(7) { col ->
             val n = week * 7 + col - offset + 1
             if (n in 1..month.lengthOfMonth()) { val day = month.atDay(n); val count = counts[day] ?: 0; val alpha = when { count == 0 -> .08f; count <= 3 -> .24f; count <= 10 -> .46f; count <= 25 -> .7f; else -> 1f }; val color by animateColorAsState(if (selected == day) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary.copy(alpha = alpha), label = "heat")
-                Box(Modifier.weight(1f).padding(2.dp).height(42.dp).shadow(2.dp, RoundedCornerShape(13.dp)).background(color, RoundedCornerShape(13.dp)).combinedClickable(onClick = { onSelect(day) }), contentAlignment = Alignment.Center) { Text("$n", style = MaterialTheme.typography.labelMedium, fontWeight = if (selected == day) FontWeight.Bold else FontWeight.Medium, color = if (count > 10 || selected == day) Color.White else MaterialTheme.colorScheme.onSurface) }
+                Box(Modifier.weight(1f).padding(2.dp).height(42.dp).background(color, RoundedCornerShape(12.dp)).combinedClickable(onClick = { onSelect(day) }), contentAlignment = Alignment.Center) { Text("$n", style = MaterialTheme.typography.labelMedium, fontWeight = if (selected == day) FontWeight.Bold else FontWeight.Medium, color = if (count > 10 || selected == day) Color.White else MaterialTheme.colorScheme.onSurface) }
             } else Spacer(Modifier.weight(1f).padding(2.dp).height(42.dp))
         } } }
     }
@@ -361,10 +375,10 @@ private fun timeGreeting(name: String): String {
 @Composable private fun FileList(files: List<LocalFile>, query: String, day: LocalDate?, onOpen: (LocalFile) -> Unit, onShare: (LocalFile) -> Unit, onDeleteReference: (LocalFile) -> Unit) {
     val (shown, error) = remember(files, query, day) { runCatching { filterFiles(files, query, day) }.fold({ it to null }, { emptyList<LocalFile>() to (it.message ?: "Search could not be parsed") }) }
     if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-    if (shown.isEmpty()) { EmptyMessage(if (files.isEmpty()) "Your almara is empty." else "No matching files.", if (files.isEmpty()) "Allow media access or add a folder in Settings." else "Try another search or date.") }
+    if (shown.isEmpty()) { EmptyMessage(if (files.isEmpty()) "Your almara is empty." else "No matching files.", if (files.isEmpty()) "Allow file access during setup, then refresh the index." else "Try another search or date.") }
     else LazyColumn(Modifier.fillMaxWidth().fillMaxHeight(0.72f), contentPadding = PaddingValues(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(shown, key = { it.uri.toString() }) { file -> var menu by remember { mutableStateOf(false) }; var radial by remember { mutableStateOf(false) }
-            Card(Modifier.fillMaxWidth().combinedClickable(onClick = { onOpen(file) }, onLongClick = { radial = true }), shape = RoundedCornerShape(16.dp)) {
+            Card(Modifier.fillMaxWidth().combinedClickable(onClick = { onOpen(file) }, onLongClick = { radial = true }), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(fileIcon(file.mime), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
                     Column(Modifier.weight(1f)) { Text(file.name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium); Text("${file.source} · ${file.day.format(DateTimeFormatter.ofPattern("MMM d"))} · ${formatBytes(file.bytes)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }
@@ -387,47 +401,54 @@ private fun timeGreeting(name: String): String {
 
 @Composable private fun EmptyMessage(title: String, detail: String) { Column(Modifier.fillMaxWidth().padding(26.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text(title, style = MaterialTheme.typography.titleMedium); Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary) } }
 
-@Composable private fun SettingsScreen(mode: ThemeMode, onMode: (ThemeMode) -> Unit, dynamicColor: Boolean, onDynamicColor: (Boolean) -> Unit, recentFilesEnabled: Boolean, onRecentFiles: (Boolean) -> Unit, onGrant: () -> Unit, onAddFolder: () -> Unit, onRefresh: () -> Unit, onCheckUpdates: () -> Unit, fileCount: Int, treeCount: Int) {
+@Composable private fun SettingsScreen(mode: ThemeMode, onMode: (ThemeMode) -> Unit, dynamicColor: Boolean, onDynamicColor: (Boolean) -> Unit, puffyButtons: Boolean, onPuffyButtons: (Boolean) -> Unit, recentFilesEnabled: Boolean, onRecentFiles: (Boolean) -> Unit, onWallpaperRefresh: () -> Unit, onRefresh: () -> Unit, onCheckUpdates: () -> Unit, fileCount: Int) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { Text("Appearance", style = MaterialTheme.typography.titleLarge); Text("Choose how Almara feels on this phone.", style = MaterialTheme.typography.bodyMedium) }
         item { Column { ThemeMode.values().forEach { option -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { RadioButton(mode == option, { onMode(option) }); Text(when(option) { ThemeMode.SYSTEM -> "System"; ThemeMode.LIGHT -> "Light"; ThemeMode.DARK -> "Dark"; ThemeMode.AMOLED -> "AMOLED · pure black" }, Modifier.weight(1f)); if (mode == option) Text("✓") } } } }
-        item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text("Wallpaper-derived colors", Modifier.weight(1f)); Switch(dynamicColor, onDynamicColor, enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) } }
+        item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Wallpaper colors", fontWeight = FontWeight.Medium); Text("Use your current Android wallpaper palette.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }; Switch(dynamicColor, onDynamicColor, enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) } }
+        item { OutlinedButton(onClick = onWallpaperRefresh, modifier = Modifier.fillMaxWidth(), enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { Text("Refresh colors from wallpaper") } }
+        item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Soft puffy buttons", fontWeight = FontWeight.Medium); Text(if (puffyButtons) "Gentle depth and soft shadows are on." else "Smooth Material surfaces; low graphics and shadows.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }; Switch(puffyButtons, onPuffyButtons) } }
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Show recent files", fontWeight = FontWeight.Medium); Text("Show or hide the recent list below the calendar.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }; Switch(recentFilesEnabled, onRecentFiles) } }
-        item { HorizontalDivider(); Text("Local library", style = MaterialTheme.typography.titleLarge); Text("$fileCount indexed references · $treeCount chosen folders", style = MaterialTheme.typography.bodyMedium) }
-        item { Button(onClick = onGrant, modifier = Modifier.fillMaxWidth()) { Text("Allow media access") } }
-        item { OutlinedButton(onClick = onAddFolder, modifier = Modifier.fillMaxWidth()) { Text("Add a documents folder") } }
-        item { TextButton(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) { Text("Refresh index") } }
-        item { DepthActionButton("Check for updates on GitHub", onCheckUpdates) }
-        item { Text("Almara opens the releases page in your browser; this private app keeps no network permission.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }
-        item { HorizontalDivider(); Text("Privacy by design", style = MaterialTheme.typography.titleLarge); Text("Almara requests no network access. Your local files stay where they are. Folder access is granted by you through Android's document picker. Almara never deletes, renames, or moves an original file.", style = MaterialTheme.typography.bodyMedium) }
-        item { Text("Almara · Smart Sedha.", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary) }
+        item { HorizontalDivider(); Text("Local library", style = MaterialTheme.typography.titleLarge); Text("$fileCount indexed files", style = MaterialTheme.typography.bodyMedium) }
+        item { DepthActionButton("Refresh index", onRefresh) }
+        item { TextButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) { Text("Check GitHub releases") } }
+        item { Text("File and notification access are requested during first setup. Almara reads only files you allow and never changes originals.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }
     }
 }
 
 @Composable private fun CreateViewDialog(files: List<LocalFile>, initial: SavedView? = null, onDismiss: () -> Unit, onCreate: (SavedView) -> Unit) {
-    var source by remember(initial) { mutableStateOf(initial?.source ?: "All") }; var kind by remember(initial) { mutableStateOf(initial?.kind ?: "All") }; var period by remember(initial) { mutableStateOf(if (initial?.period?.startsWith("Custom:") == true) "Custom range" else initial?.period ?: "This month") }; var name by remember(initial) { mutableStateOf(initial?.title ?: "") }
+    val sourceOptions = listOf("All", "WhatsApp", "Telegram", "Camera", "Screenshot", "Download", "Other")
+    val typeOptions = listOf("All", "Images", "Videos", "Audio", "PDFs", "Docs", "Archives", "Other")
+    var sources by remember(initial) { mutableStateOf(initial?.source?.split(",")?.filter(String::isNotBlank)?.toSet()?.takeIf { it.isNotEmpty() } ?: setOf("All")) }
+    var kinds by remember(initial) { mutableStateOf(initial?.kind?.split(",")?.filter(String::isNotBlank)?.toSet()?.takeIf { it.isNotEmpty() } ?: setOf("All")) }
+    var period by remember(initial) { mutableStateOf(if (initial?.period?.startsWith("Custom:") == true) "Custom range" else initial?.period ?: "This month") }; var name by remember(initial) { mutableStateOf(initial?.title ?: "") }
     val customParts = initial?.period?.removePrefix("Custom:")?.split("..")
     var customStart by remember(initial) { mutableStateOf(customParts?.getOrNull(0) ?: LocalDate.now().withDayOfMonth(1).toString()) }
     var customEnd by remember(initial) { mutableStateOf(customParts?.getOrNull(1) ?: LocalDate.now().toString()) }
     var expiry by remember(initial) { mutableStateOf(if ((initial?.expiresAt ?: 0L) > System.currentTimeMillis()) "Keep for a day" else "Never") }
     val savedPeriod = if (period == "Custom range") "Custom:$customStart..$customEnd" else period
-    val suggestion = "$source · $kind · ${if (period == "Custom range") "Custom range" else period}"
-    val ruleQuery = folderQuery(SavedView("", "", source, kind, savedPeriod))
-    val matches = remember(files, source, kind, period, customStart, customEnd) { runCatching { filterFiles(files, ruleQuery, null).size }.getOrDefault(0) }
+    val sourceValue = if ("All" in sources) "All" else sourceOptions.filter { it in sources }.joinToString(",")
+    val kindValue = if ("All" in kinds) "All" else typeOptions.filter { it in kinds }.joinToString(",")
+    val sourceSummary = if ("All" in sources) "All sources" else if (sources.size > 1) "Selected sources" else sourceValue
+    val typeSummary = if ("All" in kinds) "All files" else if (kinds.size > 1) "Selected types" else kindValue
+    val suggestion = "$sourceSummary · $typeSummary · ${if (period == "Custom range") "Custom range" else period}"
+    val ruleQuery = folderQuery(SavedView("", "", sourceValue, kindValue, savedPeriod))
+    val matchingFiles = remember(files, sourceValue, kindValue, period, customStart, customEnd) { runCatching { filterFiles(files, ruleQuery, null) }.getOrDefault(emptyList()) }
+    fun toggle(current: Set<String>, choice: String): Set<String> = when { choice == "All" -> setOf("All"); "All" in current -> setOf(choice); choice in current -> (current - choice).ifEmpty { setOf("All") }; else -> current + choice }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(if (initial == null) "New virtual folder" else "Edit virtual folder") }, text = { Column(Modifier.heightIn(max = 500.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Files remain exactly where they are.", style = MaterialTheme.typography.bodySmall)
-        Text("Source", fontWeight = FontWeight.SemiBold); ChipChoices(listOf("All", "WhatsApp", "Telegram", "Camera", "Screenshot", "Download"), source) { source = it }
-        Text("Type", fontWeight = FontWeight.SemiBold); ChipChoices(listOf("All", "Images", "PDFs", "Docs", "Audio", "Archives", "Text"), kind) { kind = it }
+        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer) { Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) { Text("${matchingFiles.size} matching files", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer); Text(if (matchingFiles.isEmpty()) "Your choices will preview here." else matchingFiles.take(3).joinToString(" · ") { it.name }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer, maxLines = 2, overflow = TextOverflow.Ellipsis) } }
+        Text("Choose sources · multiple allowed", fontWeight = FontWeight.SemiBold); MultiSelectChoices(sourceOptions, sources) { sources = toggle(sources, it) }
+        Text("Choose file types · multiple allowed", fontWeight = FontWeight.SemiBold); MultiSelectChoices(typeOptions, kinds) { kinds = toggle(kinds, it) }
         Text("Time range", fontWeight = FontWeight.SemiBold); ChipChoices(listOf("Today", "This week", "This month", "Custom range"), period) { period = it }
         if (period == "Custom range") { OutlinedTextField(customStart, { customStart = it }, label = { Text("From · YYYY-MM-DD") }, singleLine = true); OutlinedTextField(customEnd, { customEnd = it }, label = { Text("To · YYYY-MM-DD") }, singleLine = true) }
         OutlinedTextField(name, { name = it }, label = { Text("Folder name") }, placeholder = { Text(suggestion) }, singleLine = true)
         Text("Folder timer · optional", fontWeight = FontWeight.SemiBold)
         Text("This removes only the saved folder, never your files.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
         ChipChoices(listOf("Never", "Keep for a day", "Keep for a week"), expiry) { expiry = it }
-        Text("Preview · $matches matching files", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-    } }, confirmButton = { DepthActionButton(if (initial == null) "Create folder" else "Save folder", onClick = { runCatching { LocalDate.parse(customStart); LocalDate.parse(customEnd) }.onSuccess { start -> val end = runCatching { LocalDate.parse(customEnd) }.getOrNull(); if (period != "Custom range" || (end != null && !end.isBefore(start))) { val timerMs = when (expiry) { "Keep for a day" -> 24L * 60 * 60 * 1000; "Keep for a week" -> 7L * 24 * 60 * 60 * 1000; else -> 0L }; onCreate(SavedView(initial?.id ?: "", name.ifBlank { suggestion }, source, kind, savedPeriod, if (timerMs > 0) System.currentTimeMillis() + timerMs else 0L, initial?.archived ?: false, initial?.archiveOnExpiry ?: false)) } } }) }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+    } }, confirmButton = { DepthActionButton(if (initial == null) "Create folder" else "Save folder", onClick = { runCatching { LocalDate.parse(customStart); LocalDate.parse(customEnd) }.onSuccess { start -> val end = runCatching { LocalDate.parse(customEnd) }.getOrNull(); if (period != "Custom range" || (end != null && !end.isBefore(start))) { val timerMs = when (expiry) { "Keep for a day" -> 24L * 60 * 60 * 1000; "Keep for a week" -> 7L * 24 * 60 * 60 * 1000; else -> 0L }; onCreate(SavedView(initial?.id ?: "", name.ifBlank { suggestion }, sourceValue, kindValue, savedPeriod, if (timerMs > 0) System.currentTimeMillis() + timerMs else 0L, initial?.archived ?: false, initial?.archiveOnExpiry ?: false)) } } }) }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
-@Composable private fun ChipChoices(values: List<String>, selected: String, choose: (String) -> Unit) { Column(verticalArrangement = Arrangement.spacedBy(3.dp)) { values.chunked(2).forEach { row -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { row.forEach { value -> Box(Modifier.weight(1f)) { TactileChip(value, selected == value) { choose(value) } } }; if (row.size == 1) Spacer(Modifier.weight(1f)) } } } }
+@Composable private fun MultiSelectChoices(values: List<String>, selected: Set<String>, choose: (String) -> Unit) { Column(verticalArrangement = Arrangement.spacedBy(1.dp)) { values.chunked(3).forEach { row -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) { row.forEach { value -> FilterChip(value in selected, { choose(value) }, modifier = Modifier.weight(1f), label = { Text(value, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }) }; if (row.size < 3) repeat(3 - row.size) { Spacer(Modifier.weight(1f)) } } } } }
+@Composable private fun ChipChoices(values: List<String>, selected: String, choose: (String) -> Unit) { Column(verticalArrangement = Arrangement.spacedBy(1.dp)) { values.chunked(2).forEach { row -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) { row.forEach { value -> FilterChip(selected == value, { choose(value) }, modifier = Modifier.weight(1f), label = { Text(value, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }) }; if (row.size == 1) Spacer(Modifier.weight(1f)) } } } }
 
 private fun readMedia(context: android.content.Context): List<LocalFile> {
     val resolver = context.contentResolver; val result = mutableListOf<LocalFile>()
@@ -441,11 +462,10 @@ private fun readMedia(context: android.content.Context): List<LocalFile> {
     return result
 }
 private fun scanTree(context: android.content.Context, tree: Uri): List<LocalFile> {
-    val root = DocumentFile.fromTreeUri(context, tree) ?: return emptyList(); val output = mutableListOf<LocalFile>(); val queue = ArrayDeque<DocumentFile>(); queue.add(root); var visited = 0
-    while (queue.isNotEmpty() && visited < 20_000) { val node = queue.removeFirst(); visited++; if (node.isDirectory) node.listFiles().forEach { child -> if (child.isDirectory) queue.add(child) else if (child.isFile && accepted(child.name.orEmpty(), child.type.orEmpty())) { val name = child.name ?: "Untitled"; val modified = child.lastModified().takeIf { it > 0 } ?: System.currentTimeMillis(); output += LocalFile(child.uri, name, child.type ?: mimeFor(name), child.length(), modified, sourceFor("", name)) } } }
+    val root = DocumentFile.fromTreeUri(context, tree) ?: return emptyList(); val output = mutableListOf<LocalFile>(); val queue = ArrayDeque<Pair<DocumentFile, String>>(); queue.add(root to root.name.orEmpty()); var visited = 0
+    while (queue.isNotEmpty() && visited < 20_000) { val (node, relativePath) = queue.removeFirst(); visited++; if (node.isDirectory) node.listFiles().forEach { child -> val name = child.name.orEmpty(); val childPath = listOf(relativePath, name).filter(String::isNotBlank).joinToString("/"); if (child.isDirectory) queue.add(child to childPath) else if (child.isFile) { val displayName = child.name ?: "Untitled"; val modified = child.lastModified().takeIf { it > 0 } ?: System.currentTimeMillis(); output += LocalFile(child.uri, displayName, child.type ?: mimeFor(displayName), child.length(), modified, sourceFor(childPath, displayName)) } } }
     return output
 }
-private fun accepted(name: String, mime: String): Boolean = mime.startsWith("image/") || mime.startsWith("audio/") || mime.startsWith("video/") || mime == "application/pdf" || name.substringAfterLast('.', "").lowercase() in setOf("pdf", "doc", "docx", "odt", "rtf", "txt", "md", "zip", "tar", "gz", "rar", "7z")
 private fun mimeFor(name: String): String = when(name.substringAfterLast('.', "").lowercase()) { "pdf" -> "application/pdf"; "txt" -> "text/plain"; "md" -> "text/markdown"; "zip" -> "application/zip"; "doc" -> "application/msword"; "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"; else -> "application/octet-stream" }
 private fun conversionActions(file: LocalFile): List<String> = when {
     file.mime.startsWith("image/") -> listOf("PNG", "JPEG", "WebP", "Image → PDF", "Create ZIP")
@@ -479,13 +499,24 @@ private fun filterFiles(files: List<LocalFile>, query: String, day: LocalDate?):
 }
 private fun dateMatches(day: LocalDate, value: String): Boolean { val now = LocalDate.now(); return when(value.lowercase()) { "today" -> day == now; "yesterday" -> day == now.minusDays(1); "last-week" -> day in now.minusDays(7)..now; "this-week" -> day >= now.with(java.time.DayOfWeek.MONDAY); "last-month" -> YearMonth.from(day) == YearMonth.now().minusMonths(1); "this-month" -> YearMonth.from(day) == YearMonth.now(); else -> runCatching { if (value.length == 7) YearMonth.parse(value) == YearMonth.from(day) else LocalDate.parse(value) == day }.getOrElse { throw IllegalArgumentException("Invalid date '$value'. Use today, this-week, YYYY-MM-DD, or YYYY-MM.") } } }
 private fun sizeMatches(bytes: Long, value: String): Boolean { val m = Regex("([<>])(\\d+)(kb|mb|gb)", RegexOption.IGNORE_CASE).matchEntire(value) ?: throw IllegalArgumentException("Invalid size '$value'. Example: size:>5mb"); val factor = when(m.groupValues[3].lowercase()) { "kb" -> 1024L; "mb" -> 1024L*1024; else -> 1024L*1024*1024 }; val amount = m.groupValues[2].toLongOrNull() ?: throw IllegalArgumentException("Size is too large."); return if (m.groupValues[1] == ">") bytes > amount * factor else bytes < amount * factor }
-private fun folderQuery(v: SavedView) = listOfNotNull(if(v.source == "All") null else "source:${v.source.lowercase()}", if(v.kind == "All") null else "type:${v.kind.lowercase().removeSuffix("s")}", when { v.period.startsWith("Custom:") -> "date:${v.period.removePrefix("Custom:")}"; v.period == "Today" -> "date:today"; v.period == "This week" -> "date:this-week"; v.period == "This month" -> "date:this-month"; else -> null }).joinToString(" ")
+private fun folderQuery(v: SavedView): String {
+    val sources = if (v.source == "All") emptyList() else v.source.split(',').map { when (it.trim().lowercase(Locale.ROOT)) { "whatsapp" -> "whatsapp"; "telegram" -> "telegram"; "camera" -> "camera"; "screenshot" -> "screenshot"; "download" -> "download"; "other" -> "other"; else -> it.trim().lowercase(Locale.ROOT) } }
+    val types = if (v.kind == "All") emptyList() else v.kind.split(',').flatMap { label -> when (label.trim().lowercase(Locale.ROOT)) { "docs", "documents" -> listOf("pdf", "document", "spreadsheet", "presentation"); "images", "image" -> listOf("image"); "videos", "video" -> listOf("video"); "audio" -> listOf("audio"); "pdfs", "pdf" -> listOf("pdf"); "archives", "archive" -> listOf("archive"); "other" -> listOf("other"); else -> listOf(label.trim().lowercase(Locale.ROOT).removeSuffix("s")) } }.distinct()
+    return listOfNotNull(sources.takeIf { it.isNotEmpty() }?.let { "source:${it.joinToString(",")}" }, types.takeIf { it.isNotEmpty() }?.let { "type:${it.joinToString(",")}" }, when { v.period.startsWith("Custom:") -> "date:${v.period.removePrefix("Custom:")}"; v.period == "Today" -> "date:today"; v.period == "This week" -> "date:this-week"; v.period == "This month" -> "date:this-month"; else -> null }).joinToString(" ")
+}
 private fun periodLabel(value: String): String = if (value.startsWith("Custom:")) "Custom · ${value.removePrefix("Custom:").replace("..", " – ")}" else value
 private fun openFile(context: android.content.Context, file: LocalFile) { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(file.uri, file.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) } }
 private fun shareFile(context: android.content.Context, file: LocalFile) { runCatching { context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType(file.mime).putExtra(Intent.EXTRA_STREAM, file.uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share file")) } }
 private fun fileIcon(mime: String) = when { mime.startsWith("image/") -> "▧"; mime == "application/pdf" -> "▤"; mime.startsWith("audio/") -> "♫"; mime.startsWith("video/") -> "▷"; else -> "▣" }
 private fun formatBytes(bytes: Long) = when { bytes >= 1_000_000 -> String.format(Locale.getDefault(), "%.1f MB", bytes / 1_000_000.0); bytes >= 1_000 -> "${bytes / 1_000} KB"; else -> "$bytes B" }
-private fun displaySource(value: String) = when (value.lowercase(Locale.ROOT)) { "whatsapp" -> "WhatsApp"; "telegram" -> "Telegram"; "camera" -> "Camera"; "download" -> "Download"; "screenshot" -> "Screenshot"; else -> "Other" }
+private fun displaySource(value: String): String = value.split(',').map { when (it.trim().lowercase(Locale.ROOT)) { "whatsapp" -> "WhatsApp"; "telegram" -> "Telegram"; "camera" -> "Camera"; "download" -> "Download"; "screenshot" -> "Screenshot"; "other" -> "Other"; else -> it.trim().replaceFirstChar { ch -> ch.uppercase() } } }.distinct().joinToString(",")
+private fun displayTypes(value: String): String {
+    val types = value.split(',').map { it.trim().lowercase(Locale.ROOT) }.toSet()
+    val result = mutableListOf<String>()
+    if (setOf("pdf", "document", "spreadsheet", "presentation").all { it in types }) result += "Docs"
+    types.forEach { type -> when (type) { "document", "spreadsheet", "presentation" -> if ("Docs" !in result) result += "Docs"; "image" -> result += "Images"; "video" -> result += "Videos"; "audio" -> result += "Audio"; "pdf" -> if ("Docs" !in result) result += "PDFs"; "archive" -> result += "Archives"; "other" -> result += "Other" } }
+    return result.distinct().joinToString(",").ifBlank { "All" }
+}
 private fun loadViews(prefs: android.content.SharedPreferences): List<SavedView> = prefs.getStringSet("views", emptySet()).orEmpty().mapNotNull { raw -> raw.split("|", limit = 8).takeIf { it.size >= 5 }?.let { SavedView(it[0], it[1], it[2], it[3], it[4], it.getOrNull(5)?.toLongOrNull() ?: 0L, it.getOrNull(6)?.toBoolean() ?: false, it.getOrNull(7)?.toBoolean() ?: false) } }
 
 @Composable private fun TimerDialog(folder: SavedView, onDismiss: () -> Unit, onSet: (Long) -> Unit, onClear: () -> Unit) {
@@ -512,7 +543,7 @@ private suspend fun loadViewsFromDatabase(context: android.content.Context): Lis
         return db.folderDao().getAll().mapNotNull { folder ->
             val rule = rules[folder.ruleId ?: folder.id] ?: return@mapNotNull null
             val clauses = rule.query.split(Regex("\\s+")).filter { it.contains(':') }.associate { it.substringBefore(':') to it.substringAfter(':') }
-            SavedView(folder.id, folder.name, clauses["source"]?.let(::displaySource) ?: "All", clauses["type"]?.replaceFirstChar { it.uppercase() } ?: "All", when (val date = clauses["date"]) { "today" -> "Today"; "this-week" -> "This week"; else -> if (date?.contains("..") == true) "Custom:$date" else "This month" }, folder.expiresAtMillis ?: 0L, folder.archivedUntilMillis != null, folder.archiveOnExpiry)
+            SavedView(folder.id, folder.name, clauses["source"]?.let(::displaySource) ?: "All", clauses["type"]?.let(::displayTypes) ?: "All", when (val date = clauses["date"]) { "today" -> "Today"; "this-week" -> "This week"; else -> if (date?.contains("..") == true) "Custom:$date" else "This month" }, folder.expiresAtMillis ?: 0L, folder.archivedUntilMillis != null, folder.archiveOnExpiry)
         }
     } finally { db.close() }
 }
