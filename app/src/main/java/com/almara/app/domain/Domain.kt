@@ -1,6 +1,7 @@
 package com.almara.app.domain
 
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -16,14 +17,16 @@ data class FileRecord(
     val sizeBytes: Long = 0L
 )
 
-enum class Source { WHATSAPP, TELEGRAM, CAMERA, DOWNLOAD, OTHER;
+enum class Source { WHATSAPP, TELEGRAM, CAMERA, SCREENSHOT, DOWNLOAD, OTHER, ALL;
     companion object {
         fun parse(value: String): Source? = when (value.lowercase(Locale.ROOT)) {
             "whatsapp", "wa" -> WHATSAPP
             "telegram", "tg" -> TELEGRAM
             "camera" -> CAMERA
+            "screenshot", "screenshots" -> SCREENSHOT
             "download", "downloads" -> DOWNLOAD
             "other" -> OTHER
+            "all" -> ALL
             else -> null
         }
     }
@@ -33,8 +36,8 @@ enum class FileType(val extensions: Set<String>) {
     IMAGE(setOf("jpg", "jpeg", "png", "gif", "webp", "heic", "bmp")),
     VIDEO(setOf("mp4", "mkv", "mov", "webm", "3gp", "avi")),
     AUDIO(setOf("mp3", "m4a", "aac", "ogg", "wav", "flac", "opus")),
-    PDF(setOf("pdf")), DOCUMENT(setOf("doc", "docx", "odt", "rtf", "txt")),
-    SPREADSHEET(setOf("xls", "xlsx", "csv", "ods")), PRESENTATION(setOf("ppt", "pptx", "odp")), ARCHIVE(setOf("zip", "rar", "7z", "gz", "tar")), OTHER(emptySet());
+    PDF(setOf("pdf")), DOCUMENT(setOf("doc", "docx", "odt", "rtf", "txt", "md")),
+    SPREADSHEET(setOf("xls", "xlsx", "csv", "ods")), PRESENTATION(setOf("ppt", "pptx", "odp")), ARCHIVE(setOf("zip", "rar", "7z", "gz", "tar")), OTHER(emptySet()), ALL(emptySet());
 
     companion object {
         fun fromName(name: String): FileType {
@@ -52,6 +55,7 @@ enum class FileType(val extensions: Set<String>) {
             "presentation", "slide", "powerpoint" -> PRESENTATION
             "archive", "zip" -> ARCHIVE
             "other" -> OTHER
+            "all" -> ALL
             else -> null
         }
     }
@@ -63,6 +67,7 @@ fun detectSource(pathOrFilename: String): Source {
     return when {
         Regex("(^|/)whatsapp(/|$)|whatsapp[-_ ]", RegexOption.IGNORE_CASE).containsMatchIn(text) -> Source.WHATSAPP
         Regex("(^|/)telegram(/|$)|telegram[-_ ]", RegexOption.IGNORE_CASE).containsMatchIn(text) -> Source.TELEGRAM
+        Regex("(^|/)pictures/screenshots?(/|$)|(^|/)screenshots?(/|$)").containsMatchIn(text) -> Source.SCREENSHOT
         Regex("(^|/)dcim/camera(/|$)|(^|/)camera(/|$)").containsMatchIn(text) -> Source.CAMERA
         Regex("(^|/)downloads?(/|$)").containsMatchIn(text) -> Source.DOWNLOAD
         else -> Source.OTHER
@@ -115,6 +120,9 @@ sealed interface DateQuery {
     data object Yesterday : DateQuery
     data object ThisWeek : DateQuery
     data object ThisMonth : DateQuery
+    data object LastWeek : DateQuery
+    data object LastMonth : DateQuery
+    data class Month(val value: YearMonth) : DateQuery
     data class On(val date: LocalDate) : DateQuery
 }
 
@@ -145,7 +153,8 @@ fun parseQuery(input: String): QueryParseResult {
                 val date = when (value.lowercase(Locale.ROOT)) {
                     "today" -> DateQuery.Today; "yesterday" -> DateQuery.Yesterday
                     "this-week", "week" -> DateQuery.ThisWeek; "this-month", "month" -> DateQuery.ThisMonth
-                    else -> try { DateQuery.On(LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE)) } catch (_: DateTimeParseException) { return QueryParseResult(null, "Invalid date '$value'. Use YYYY-MM-DD, today, yesterday, this-week, or this-month.") }
+                    "last-week" -> DateQuery.LastWeek; "last-month" -> DateQuery.LastMonth
+                    else -> if (Regex("^\\d{4}-\\d{2}$").matches(value)) try { DateQuery.Month(YearMonth.parse(value)) } catch (_: DateTimeParseException) { return QueryParseResult(null, "Invalid month '$value'.") } else try { DateQuery.On(LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE)) } catch (_: DateTimeParseException) { return QueryParseResult(null, "Invalid date '$value'. Use YYYY-MM-DD, YYYY-MM, today, yesterday, last-week, last-month, this-week, or this-month.") }
                 }
                 clauses += QueryClause.Date(date)
             }
@@ -180,8 +189,8 @@ private fun tokenize(input: String): List<String>? {
 private fun QueryClause.matches(file: FileRecord, today: LocalDate): Boolean = when (this) {
     is QueryClause.Text -> file.name.contains(value, ignoreCase = true) || file.path.contains(value, ignoreCase = true)
     is QueryClause.NameContains -> file.name.contains(value, ignoreCase = true)
-    is QueryClause.SourceIs -> file.source == value
-    is QueryClause.TypeIs -> file.type == value
+    is QueryClause.SourceIs -> value == Source.ALL || file.source == value
+    is QueryClause.TypeIs -> value == FileType.ALL || file.type == value
     is QueryClause.Size -> when (operator) { Comparison.LT -> file.sizeBytes < bytes; Comparison.LTE -> file.sizeBytes <= bytes; Comparison.EQ -> file.sizeBytes == bytes; Comparison.GTE -> file.sizeBytes >= bytes; Comparison.GT -> file.sizeBytes > bytes }
     is QueryClause.Date -> {
         val date = file.date
@@ -190,6 +199,9 @@ private fun QueryClause.matches(file: FileRecord, today: LocalDate): Boolean = w
             DateQuery.Yesterday -> date == today.minusDays(1)
             DateQuery.ThisWeek -> date >= today.minusDays((today.dayOfWeek.value - 1).toLong()) && date <= today
             DateQuery.ThisMonth -> date.year == today.year && date.month == today.month
+            DateQuery.LastWeek -> { val start = today.minusDays((today.dayOfWeek.value - 1).toLong() + 7); date in start..start.plusDays(6) }
+            DateQuery.LastMonth -> YearMonth.from(date) == YearMonth.from(today).minusMonths(1)
+            is DateQuery.Month -> YearMonth.from(date) == d.value
             is DateQuery.On -> date == d.date
         }
     }

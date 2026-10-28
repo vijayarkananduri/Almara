@@ -10,7 +10,7 @@ class DomainTest {
         val result = parseQuery("family name:\"vacation photo\" source:whatsapp type:image size:>=2MiB date:2024-03-05")
         assertTrue(result.error.orEmpty(), result.isValid)
         assertEquals(6, result.query!!.clauses.size)
-        val file = FileRecord("Vacation Photo.jpg", "/WhatsApp/Media/IMG.jpg", Source.WHATSAPP, LocalDate.parse("2024-03-05"), FileType.IMAGE, 3L * 1024 * 1024)
+        val file = FileRecord("Family Vacation Photo.jpg", "/WhatsApp/Media/IMG.jpg", Source.WHATSAPP, LocalDate.parse("2024-03-05"), FileType.IMAGE, 3L * 1024 * 1024)
         assertTrue(result.query.matches(file, LocalDate.parse("2024-03-05")))
     }
 
@@ -31,6 +31,18 @@ class DomainTest {
         assertTrue(parseQuery("date:this-month").query!!.matches(file, today))
         assertTrue(parseQuery("date:2024-06-12").query!!.matches(file, today))
         assertFalse(parseQuery("date:yesterday").query!!.matches(file, today))
+    }
+
+    @Test fun supportsPrdMonthAndLastWeekDateFormsAndAllValues() {
+        val today = LocalDate.parse("2024-06-12")
+        val lastWeekFile = FileRecord("screen.png", "/Pictures/Screenshots/screen.png", Source.SCREENSHOT, LocalDate.parse("2024-06-05"), FileType.IMAGE)
+        val lastMonthFile = FileRecord("report.pdf", date = LocalDate.parse("2024-05-18"), type = FileType.PDF)
+        assertTrue(parseQuery("date:last-week").query!!.matches(lastWeekFile, today))
+        assertTrue(parseQuery("source:screenshot").query!!.matches(lastWeekFile, today))
+        assertTrue(parseQuery("date:2024-05").query!!.matches(lastMonthFile, today))
+        assertTrue(parseQuery("date:last-month").query!!.matches(lastMonthFile, today))
+        assertTrue(parseQuery("source:all type:all").query!!.matches(lastMonthFile, today))
+        assertEquals(Source.SCREENSHOT, detectSource("Pictures/Screenshots/capture.png"))
     }
 
     @Test fun detectsSourcesFromDirectoriesAndFilenamePrefixes() {

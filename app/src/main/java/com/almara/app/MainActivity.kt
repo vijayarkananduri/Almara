@@ -53,6 +53,10 @@ import com.almara.app.data.UriMetadataEntity
 import com.almara.app.data.VirtualRuleEntity
 import com.almara.app.widget.AlmaraWidgetData
 import com.almara.app.conversion.ConversionService
+import com.almara.app.domain.FileRecord
+import com.almara.app.domain.FileType
+import com.almara.app.domain.Source
+import com.almara.app.domain.parseQuery
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -396,18 +400,9 @@ private fun copyExtractedFiles(context: android.content.Context, treeUri: Uri, f
 }
 private fun sourceFor(path: String, name: String): String { val v = "$path/$name"; return when { v.contains("WhatsApp", true) -> "WhatsApp"; v.contains("Telegram", true) -> "Telegram"; v.contains("Screenshots", true) -> "Screenshot"; v.contains("DCIM/Camera", true) -> "Camera"; v.contains("Download", true) -> "Download"; else -> "Other" } }
 private fun filterFiles(files: List<LocalFile>, query: String, day: LocalDate?): List<LocalFile> {
-    val tokens = query.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
-    for (token in tokens) { val parts = token.split(":", limit = 2); if (parts.size == 2 && parts[0].lowercase() !in setOf("name", "source", "type", "date", "size")) throw IllegalArgumentException("Unknown search prefix: ${parts[0]}. Try source:, type:, date:, name:, or size:"); if (parts.size == 2 && parts[1].isBlank()) throw IllegalArgumentException("Add a value after ${parts[0]}:") }
-    return files.filter { file -> (day == null || file.day == day) && tokens.all { token ->
-        val parts = token.split(":", limit = 2); if (parts.size == 1) file.name.contains(token, true) else when(parts[0].lowercase(Locale.ROOT)) {
-            "name" -> file.name.contains(parts[1], true)
-            "source" -> if (parts[1].equals("all", true)) true else if (parts[1].equals("screenshot", true)) file.source.equals("Screenshot", true) else file.source.equals(parts[1], true)
-            "type" -> when(parts[1].lowercase()) { "all" -> true; "image", "images" -> file.mime.startsWith("image/"); "pdf", "pdfs" -> file.mime == "application/pdf"; "audio" -> file.mime.startsWith("audio/"); "doc", "docs" -> file.name.substringAfterLast('.', "").lowercase() in setOf("doc", "docx", "odt", "rtf"); "archive", "archives" -> file.name.substringAfterLast('.', "").lowercase() in setOf("zip", "tar", "gz", "rar", "7z"); "text" -> file.mime.startsWith("text/") || file.name.substringAfterLast('.', "").lowercase() in setOf("txt", "md"); else -> throw IllegalArgumentException("Unknown type '${parts[1]}'.") }
-            "date" -> dateMatches(file.day, parts[1])
-            "size" -> sizeMatches(file.bytes, parts[1])
-            else -> false
-        }
-    } }
+    val parsed = parseQuery(query)
+    val rule = parsed.query ?: throw IllegalArgumentException(parsed.error ?: "Invalid query")
+    return files.filter { file -> (day == null || file.day == day) && rule.matches(FileRecord(file.name, file.uri.toString(), Source.parse(file.source) ?: Source.OTHER, file.day, FileType.fromName(file.name), file.bytes)) }
 }
 private fun dateMatches(day: LocalDate, value: String): Boolean { val now = LocalDate.now(); return when(value.lowercase()) { "today" -> day == now; "yesterday" -> day == now.minusDays(1); "last-week" -> day in now.minusDays(7)..now; "this-week" -> day >= now.with(java.time.DayOfWeek.MONDAY); "last-month" -> YearMonth.from(day) == YearMonth.now().minusMonths(1); "this-month" -> YearMonth.from(day) == YearMonth.now(); else -> runCatching { if (value.length == 7) YearMonth.parse(value) == YearMonth.from(day) else LocalDate.parse(value) == day }.getOrElse { throw IllegalArgumentException("Invalid date '$value'. Use today, this-week, YYYY-MM-DD, or YYYY-MM.") } } }
 private fun sizeMatches(bytes: Long, value: String): Boolean { val m = Regex("([<>])(\\d+)(kb|mb|gb)", RegexOption.IGNORE_CASE).matchEntire(value) ?: throw IllegalArgumentException("Invalid size '$value'. Example: size:>5mb"); val factor = when(m.groupValues[3].lowercase()) { "kb" -> 1024L; "mb" -> 1024L*1024; else -> 1024L*1024*1024 }; val amount = m.groupValues[2].toLongOrNull() ?: throw IllegalArgumentException("Size is too large."); return if (m.groupValues[1] == ">") bytes > amount * factor else bytes < amount * factor }
