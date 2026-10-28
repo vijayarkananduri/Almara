@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    name: Build debug APK
+    name: Test and build unsigned v1 APKs
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -34,17 +34,23 @@ jobs:
         run: gradle --no-daemon :app:testDebugUnitTest
       - name: Assemble debug APK
         run: gradle --no-daemon :app:assembleDebug
-      - name: Rename APK
+      - name: Assemble unsigned release APK
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Rename APKs
         run: cp app/build/outputs/apk/debug/app-debug.apk Almara-${GITHUB_REF_NAME//\//-}-debug.apk
+      - name: Rename unsigned release APK
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk Almara-${GITHUB_REF_NAME//\//-}-unsigned.apk
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Almara-debug-apk
-          path: Almara-*-debug.apk
+          name: Almara-unsigned-v1-apks
+          path: |
+            Almara-*-debug.apk
+            Almara-*-unsigned.apk
           if-no-files-found: error
           retention-days: 30
       - name: Attach APK to GitHub Release
         if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${GITHUB_REF_NAME}" Almara-*-debug.apk --clobber
+        run: gh release upload "${GITHUB_REF_NAME}" Almara-*-debug.apk Almara-*-unsigned.apk --clobber
