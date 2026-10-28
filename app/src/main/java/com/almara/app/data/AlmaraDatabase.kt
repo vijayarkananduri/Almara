@@ -26,7 +26,6 @@ abstract class AlmaraDatabase : RoomDatabase() {
                     .openHelperFactory(factory)
                     .build()
             } catch (failure: Throwable) {
-                factory.close()
                 throw failure
             }
         }

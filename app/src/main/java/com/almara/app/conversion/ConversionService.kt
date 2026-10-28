@@ -63,6 +63,12 @@ class ConversionService(context: Context) {
         init { require(maxFiles > 0 && maxUncompressedBytes > 0 && maxSingleFileBytes > 0) }
     }
 
+    /** Removes only this service's abandoned cache outputs older than the retention window. */
+    fun cleanupTemporaryOutputs(maxAgeMillis: Long = 24L * 60 * 60 * 1000) {
+        val cutoff = System.currentTimeMillis() - maxAgeMillis.coerceAtLeast(0L)
+        cacheDir.listFiles().orEmpty().filter { (it.name.startsWith("almara-") || it.isDirectory && it.name.startsWith("extract-")) && it.lastModified() < cutoff }.forEach { it.deleteRecursively() }
+    }
+
     /** Re-encodes an image only after the user explicitly invokes this method. */
     fun reencodeImage(uri: Uri, format: ImageFormat, quality: Int = 90, control: Control = Control()): File {
         require(quality in 0..100) { "quality must be between 0 and 100" }

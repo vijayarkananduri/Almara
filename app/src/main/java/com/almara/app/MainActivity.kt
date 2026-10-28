@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
@@ -41,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import com.almara.app.data.AlmaraDatabase
@@ -104,9 +106,17 @@ private fun AlmaraApp() {
     var selectedFolderId by remember { mutableStateOf<String?>(null) }
     var conversionTarget by remember { mutableStateOf<LocalFile?>(null) }
     var pendingConversionFile by remember { mutableStateOf<File?>(null) }
+    var pendingExtractionFiles by remember { mutableStateOf<List<File>?>(null) }
+    var requestExtractionPicker by remember { mutableStateOf(false) }
     var pendingExpiry by remember { mutableStateOf<Pair<String, Long>?>(null) }
     val permission = if (Build.VERSION.SDK_INT >= 34) arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) else if (Build.VERSION.SDK_INT >= 33) arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO) else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-    fun persistViews(next: List<SavedView>) { views = next; scope.launch { withContext(Dispatchers.IO) { runCatching { storeViewsInDatabase(context, next) } }; AlmaraWidgetData.refresh(context) } }
+    fun persistViews(next: List<SavedView>) {
+        views = next
+        scope.launch {
+            val saved = withContext(Dispatchers.IO) { runCatching { storeViewsInDatabase(context, next) }.isSuccess }
+            if (saved) AlmaraWidgetData.refresh(context) else status = "Could not save folder rules in the encrypted library. Retry after checking storage."
+        }
+    }
     fun scan() {
         indexing = true
         status = "Indexing local files…"
@@ -163,20 +173,32 @@ private fun AlmaraApp() {
                     "Markdown → HTML" -> service.markdownToHtml(file.uri)
                     "Markdown → PDF" -> service.markdownToPdf(file.uri)
                     "Create ZIP" -> service.createZip(listOf(ConversionService.Input(file.uri, file.name)))
+                    "Extract ZIP" -> service.extractZip(file.uri)
                     else -> error("Unsupported conversion")
                 }
             } }
-            result.fold({ output -> pendingConversionFile = output; saveConversionLauncher.launch(output.name); status = "Choose where to save the converted copy." }, { status = it.message ?: "Conversion failed." })
+            result.fold({ output ->
+                if (output is List<*>) { pendingExtractionFiles = output.filterIsInstance<File>(); requestExtractionPicker = true; status = "Choose a destination folder for the extracted files." }
+                else { val generated = output as File; pendingConversionFile = generated; saveConversionLauncher.launch(generated.name); status = "Choose where to save the converted copy." }
+            }, { status = it.message ?: "Conversion failed." })
         }
     }
     val treeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
-            runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-            val trees = prefs.getStringSet("trees", emptySet()).orEmpty().toMutableSet().apply { add(uri.toString()) }
-            prefs.edit().putStringSet("trees", trees).apply(); scan(); status = "Folder added. Almara only reads its contents."
+            val extraction = pendingExtractionFiles
+            if (extraction != null) {
+                pendingExtractionFiles = null
+                scope.launch { val count = withContext(Dispatchers.IO) { copyExtractedFiles(context, uri, extraction) }; status = if (count > 0) "Extracted $count files to your chosen folder." else "No extracted files could be saved." }
+            } else {
+                runCatching { context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                val trees = prefs.getStringSet("trees", emptySet()).orEmpty().toMutableSet().apply { add(uri.toString()) }
+                prefs.edit().putStringSet("trees", trees).apply(); scan(); status = "Folder added. Almara only reads its contents."
+            }
         }
     }
+    LaunchedEffect(requestExtractionPicker) { if (requestExtractionPicker) { requestExtractionPicker = false; treeLauncher.launch(null) } }
     LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) { ConversionService(context).cleanupTemporaryOutputs() }
         val legacy = loadViews(prefs)
         val stored = withContext(Dispatchers.IO) { runCatching { loadViewsFromDatabase(context) }.getOrDefault(emptyList()) }
         if (stored.isNotEmpty()) { views = stored; prefs.edit().remove("views").apply() }
@@ -275,12 +297,23 @@ private fun AlmaraApp() {
     if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
     if (shown.isEmpty()) { EmptyMessage(if (files.isEmpty()) "Your almara is empty." else "No matching files.", if (files.isEmpty()) "Allow media access or add a folder in Settings." else "Try another search or date.") }
     else LazyColumn(Modifier.fillMaxWidth().fillMaxHeight(0.72f), contentPadding = PaddingValues(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(shown, key = { it.uri.toString() }) { file -> var menu by remember { mutableStateOf(false) }
-            Card(Modifier.fillMaxWidth().combinedClickable(onClick = { onOpen(file) }, onLongClick = { menu = true }), shape = RoundedCornerShape(16.dp)) {
+        items(shown, key = { it.uri.toString() }) { file -> var menu by remember { mutableStateOf(false) }; var radial by remember { mutableStateOf(false) }
+            Card(Modifier.fillMaxWidth().combinedClickable(onClick = { onOpen(file) }, onLongClick = { radial = true }), shape = RoundedCornerShape(16.dp)) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(fileIcon(file.mime), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 12.dp))
                     Column(Modifier.weight(1f)) { Text(file.name, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium); Text("${file.source} · ${file.day.format(DateTimeFormatter.ofPattern("MMM d"))} · ${formatBytes(file.bytes)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }
                     Box { TextButton(onClick = { menu = true }) { Text("•••") }; DropdownMenu(menu, { menu = false }) { DropdownMenuItem(text = { Text("Open") }, onClick = { menu = false; onOpen(file) }); DropdownMenuItem(text = { Text("Share") }, onClick = { menu = false; onShare(file) }); DropdownMenuItem(text = { Text("Convert / ZIP tools") }, onClick = { menu = false; onConvert(file) }); DropdownMenuItem(text = { Text("Remove from this view") }, onClick = { menu = false; onDeleteReference(file) }) } }
+                }
+            }
+            if (radial) Dialog(onDismissRequest = { radial = false }) {
+                Surface(shape = CircleShape, tonalElevation = 6.dp) {
+                    Box(Modifier.size(260.dp), contentAlignment = Alignment.Center) {
+                        Text("${file.name.take(22)}${if (file.name.length > 22) "…" else ""}", style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                        TextButton(onClick = { radial = false; onOpen(file) }, modifier = Modifier.align(Alignment.TopCenter).offset(y = 14.dp)) { Text("Open") }
+                        TextButton(onClick = { radial = false; onShare(file) }, modifier = Modifier.align(Alignment.CenterEnd).offset(x = (-8).dp)) { Text("Share") }
+                        TextButton(onClick = { radial = false; onConvert(file) }, modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-14).dp)) { Text("Tools") }
+                        TextButton(onClick = { radial = false; onDeleteReference(file) }, modifier = Modifier.align(Alignment.CenterStart).offset(x = 8.dp)) { Text("Remove") }
+                    }
                 }
             }
         }
@@ -341,8 +374,25 @@ private fun conversionActions(file: LocalFile): List<String> = when {
     file.mime.startsWith("image/") -> listOf("PNG", "JPEG", "WebP", "Image → PDF", "Create ZIP")
     file.mime == "application/pdf" -> listOf("PDF text → TXT", "PDF pages → ZIP", "Create ZIP")
     file.name.endsWith(".md", true) -> listOf("Markdown → HTML", "Markdown → PDF", "Create ZIP")
-    file.name.endsWith(".zip", true) -> listOf("Create ZIP")
+    file.name.endsWith(".zip", true) -> listOf("Extract ZIP", "Create ZIP")
     else -> listOf("Create ZIP")
+}
+private fun copyExtractedFiles(context: android.content.Context, treeUri: Uri, files: List<File>): Int {
+    val destination = DocumentFile.fromTreeUri(context, treeUri) ?: return 0
+    val root = files.firstOrNull()?.let { file -> generateSequence(file.parentFile) { it.parentFile }.firstOrNull { it.name.startsWith("extract-") } }
+    var copied = 0
+    files.forEach { file -> runCatching {
+        if (root == null || !file.canonicalPath.startsWith(root.canonicalPath + File.separator)) return@runCatching
+        val parts = file.relativeTo(root).invariantSeparatorsPath.split('/').filter { it.isNotBlank() }
+        if (parts.isEmpty()) return@runCatching
+        var parent = destination
+        parts.dropLast(1).forEach { segment -> parent = parent.findFile(segment) ?: parent.createDirectory(segment) ?: error("Could not create destination folder") }
+        val outFile = parent.createFile(mimeFor(file.name), parts.last()) ?: error("Could not create destination file")
+        context.contentResolver.openOutputStream(outFile.uri)?.use { out -> file.inputStream().use { it.copyTo(out) } } ?: error("Could not write destination file")
+        copied++
+    } }
+    root?.deleteRecursively()
+    return copied
 }
 private fun sourceFor(path: String, name: String): String { val v = "$path/$name"; return when { v.contains("WhatsApp", true) -> "WhatsApp"; v.contains("Telegram", true) -> "Telegram"; v.contains("Screenshots", true) -> "Screenshot"; v.contains("DCIM/Camera", true) -> "Camera"; v.contains("Download", true) -> "Download"; else -> "Other" } }
 private fun filterFiles(files: List<LocalFile>, query: String, day: LocalDate?): List<LocalFile> {

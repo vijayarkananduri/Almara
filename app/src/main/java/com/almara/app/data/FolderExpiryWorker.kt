@@ -9,12 +9,12 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.almara.app.expiry.AlmaraExpiryActionReceiver
 import com.almara.app.expiry.ExpiryAction
 import com.almara.app.expiry.ExpiryNotifications
 import com.almara.app.expiry.ExpiryOptions
 import com.almara.app.expiry.ExpiryPolicy
 import com.almara.app.expiry.ExpiringFolder
+import com.almara.app.widget.AlmaraWidgetData
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,6 +51,7 @@ class FolderExpiryWorker(context: Context, params: WorkerParameters) : Coroutine
                     folder.ruleId?.let { db.virtualRuleDao().delete(it) }
                 }
             } finally { db.close() }
+            AlmaraWidgetData.refresh(applicationContext)
             Result.success()
         } catch (_: Exception) { Result.retry() }
     }
