@@ -224,7 +224,7 @@ private fun AlmaraApp() {
     }
     MaterialTheme(colorScheme = colors) {
         Scaffold(bottomBar = {
-            Surface(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp).shadow(12.dp, RoundedCornerShape(28.dp)), shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = if (liquidGlass) .78f else .96f), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .45f)), tonalElevation = 5.dp) {
+            Surface(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 8.dp).offset(y = (-22).dp).shadow(12.dp, RoundedCornerShape(28.dp)), shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = if (liquidGlass) .78f else .96f), border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .45f)), tonalElevation = 5.dp) {
                 NavigationBar(containerColor = Color.Transparent, tonalElevation = 0.dp) { listOf(AlmaraTab.HOME to Icons.Rounded.Home, AlmaraTab.SEARCH to Icons.Rounded.Search, AlmaraTab.FOLDERS to Icons.Rounded.Folder, AlmaraTab.SETTINGS to Icons.Rounded.Settings).forEach { (destination, icon) ->
                     NavigationBarItem(selected = tab == destination, onClick = { tab = destination }, icon = { Icon(icon, null) }, label = { Text(destination.name.lowercase().replaceFirstChar { it.uppercase() }) })
                 } }
