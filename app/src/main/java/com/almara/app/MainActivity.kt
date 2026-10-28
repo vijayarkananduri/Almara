@@ -96,6 +96,7 @@ private fun AlmaraApp() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { context.getSharedPreferences("almara", 0) }
+    val appVersion = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0" }.getOrDefault("1.0.0") }
     val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
     var mode by remember { mutableStateOf(runCatching { ThemeMode.valueOf(prefs.getString("theme", "SYSTEM")!!) }.getOrDefault(ThemeMode.SYSTEM)) }
     var dark by remember { mutableStateOf(mode == ThemeMode.DARK || mode == ThemeMode.AMOLED || (mode == ThemeMode.SYSTEM && systemDark)) }
@@ -241,7 +242,7 @@ private fun AlmaraApp() {
     MaterialTheme(colorScheme = colors) {
         Scaffold(bottomBar = {
             Column {
-                Text("Almara v${BuildConfig.VERSION_NAME} · @Vijayarka", Modifier.fillMaxWidth().padding(top = 2.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                Text("Almara v$appVersion · @Vijayarka", Modifier.fillMaxWidth().padding(top = 2.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
                 FloatingPillNav(tab, onSelect = { tab = it })
             }
         }, floatingActionButton = { if (tab == AlmaraTab.HOME || tab == AlmaraTab.FOLDERS) FloatingActionButton(onClick = { showCreate = true }) { Icon(Icons.Rounded.Add, "Create virtual folder") } }) { padding ->
