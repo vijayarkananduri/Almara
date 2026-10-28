@@ -140,6 +140,7 @@ private fun AlmaraApp() {
     } }, confirmButton = { TextButton(onClick = { showSettings = false }) { Text("Done") } })
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Heatmap(month: YearMonth, files: List<LocalFile>, selected: LocalDate?, onSelect: (LocalDate) -> Unit) {
     val counts = remember(files, month) { files.filter { YearMonth.from(it.day) == month }.groupingBy { it.day }.eachCount() }
