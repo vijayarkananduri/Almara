@@ -42,20 +42,19 @@ internal object WidgetViews {
         val counts = runCatching { AlmaraWidgetData.provider.monthActivity(context, month) }.getOrDefault(emptyMap())
         views.setTextViewText(R.id.widget_month_title, month.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())))
         views.setOnClickPendingIntent(R.id.widget_heatmap_root, launchIntent(context, REQUEST_HEATMAP))
-        val max = counts.values.maxOrNull()?.coerceAtLeast(1) ?: 1
         val days = month.lengthOfMonth()
+        val today = java.time.LocalDate.now().takeIf { YearMonth.from(it) == month }?.dayOfMonth
         for (cellIndex in 1..42) {
             val cell = context.resources.getIdentifier("widget_day_$cellIndex", "id", context.packageName)
             if (cell == 0) continue
             val day = cellIndex - month.atDay(1).dayOfWeek.value + 1
             if (day in 1..days) {
                 val count = counts[day]?.coerceAtLeast(0) ?: 0
-                val strength = count.toFloat() / max
-                val color = if (count == 0) palette[1] else when { strength < .34f -> blend(palette[0], palette[3], .28f); strength < .67f -> blend(palette[0], palette[3], .56f); else -> palette[3] }
+                val color = when { count == 0 -> palette[1]; count <= 3 -> blend(palette[0], palette[3], .24f); count <= 10 -> blend(palette[0], palette[3], .46f); count <= 25 -> blend(palette[0], palette[3], .70f); else -> palette[3] }
                 views.setTextViewText(cell, day.toString())
                 views.setInt(cell, "setBackgroundColor", color)
-                views.setTextColor(cell, if (count > 0 && strength >= .67f) Color.WHITE else palette[2])
-                views.setContentDescription(cell, "$day, $count items")
+                views.setTextColor(cell, if (count > 25) Color.WHITE else palette[2])
+                views.setContentDescription(cell, if (day == today) "$day, today, $count files" else "$day, $count files")
             } else {
                 views.setTextViewText(cell, "")
                 views.setInt(cell, "setBackgroundColor", Color.TRANSPARENT)
