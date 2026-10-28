@@ -59,12 +59,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AlmaraApp() {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("almara", 0) }
+    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
     var mode by remember { mutableStateOf(runCatching { ThemeMode.valueOf(prefs.getString("theme", "SYSTEM")!!) }.getOrDefault(ThemeMode.SYSTEM)) }
-    var dark by remember { mutableStateOf(mode == ThemeMode.DARK || mode == ThemeMode.AMOLED || (mode == ThemeMode.SYSTEM && androidx.compose.foundation.isSystemInDarkTheme())) }
+    var dark by remember { mutableStateOf(mode == ThemeMode.DARK || mode == ThemeMode.AMOLED || (mode == ThemeMode.SYSTEM && systemDark)) }
     var files by remember { mutableStateOf<List<LocalFile>>(emptyList()) }
     var views by remember { mutableStateOf(loadViews(prefs)) }
     var query by remember { mutableStateOf("") }
@@ -151,7 +153,7 @@ private fun AlmaraApp() {
                         } }
                         selectedFolderId?.let { id -> Text("Long-press selected folder to remove its saved rule. Original files are always preserved.", style = MaterialTheme.typography.bodySmall) }
                     }
-                    AlmaraTab.SETTINGS -> SettingsScreen(mode, { selected -> mode = selected; dark = selected == ThemeMode.DARK || selected == ThemeMode.AMOLED || (selected == ThemeMode.SYSTEM && androidx.compose.foundation.isSystemInDarkTheme()); prefs.edit().putString("theme", selected.name).apply() },
+                    AlmaraTab.SETTINGS -> SettingsScreen(mode, { selected -> mode = selected; dark = selected == ThemeMode.DARK || selected == ThemeMode.AMOLED || (selected == ThemeMode.SYSTEM && systemDark); prefs.edit().putString("theme", selected.name).apply() },
                         onGrant = { permissionLauncher.launch(permission) }, onAddFolder = { treeLauncher.launch(null) }, onRefresh = { scan() }, fileCount = files.size, treeCount = prefs.getStringSet("trees", emptySet()).orEmpty().size)
                 }
             }
