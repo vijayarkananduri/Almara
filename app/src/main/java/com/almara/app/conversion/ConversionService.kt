@@ -64,7 +64,7 @@ class ConversionService(context: Context) {
     }
 
     /** Removes only this service's abandoned cache outputs older than the retention window. */
-    fun cleanupTemporaryOutputs(maxAgeMillis: Long = 24L * 60 * 60 * 1000) {
+    fun cleanupTemporaryOutputs(maxAgeMillis: Long = 60L * 60 * 1000) {
         val cutoff = System.currentTimeMillis() - maxAgeMillis.coerceAtLeast(0L)
         cacheDir.listFiles().orEmpty().filter { (it.name.startsWith("almara-") || it.isDirectory && it.name.startsWith("extract-")) && it.lastModified() < cutoff }.forEach { it.deleteRecursively() }
     }
