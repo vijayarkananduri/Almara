@@ -14,19 +14,19 @@ This branch contains the first full-v1 implementation pass derived from the [pro
 
 Implemented in this MVP:
 
-- Native Compose interface with Home, Search, Folders, and Settings destinations.
+- Native Compose interface with Home, Search, Folders, and Settings destinations; long-press opens an accessible radial menu for Open, Share, Tools, and Remove-from-view.
 - Optional-name first-run onboarding and system, light, dark, AMOLED, and Android 12+ wallpaper-derived theme choices.
 - Permission-scoped MediaStore indexing and recursive read-only indexing of user-selected SAF folders, persisted in a Keystore-protected SQLCipher/Room database and reconciled by WorkManager.
 - Source/date metadata, month heatmap, and local search including `source:`, `type:`, `date:`, `name:`, and `size:` terms.
 - Rule-backed virtual folders, match-count preview, expiry timers, notification actions, and optional seven-day archive; file references only.
-- Offline image re-encoding, image-to-PDF, PDF text extraction/page rasterization, Markdown-to-HTML/PDF, and bounded ZIP operations. Output is saved only through Android's document picker.
+- Offline image re-encoding, image-to-PDF, PDF text extraction/page rasterization, Markdown-to-HTML/PDF, bounded ZIP creation/extraction, and a user-selected SAF destination for extracted files. Output is saved only through Android's document picker.
 - Native month-heatmap and virtual-folder home-screen widgets.
 - Unit-tested platform-independent query/domain helpers and a nostalgic custom adaptive Almara icon (not a file/folder drawing).
 - Custom vintage-inspired Almara adaptive icon (arched sunburst/A monogram; not a file or folder illustration).
 - Platform-independent query, file-type, source, date, and size domain helpers with JUnit tests.
 - GitHub Actions workflow builds a debug APK and uploads it as an artifact; publishing a GitHub Release attaches the APK.
 
-Still to verify or complete against every PRD acceptance criterion: exact query grammar/date coverage, incremental-versus-full index behavior on large libraries, extraction destination UI, robust low-storage/large-file UX, duplicate detection (if retained in scope), Hindi localization, accessible radial file-action menu, and performance/usability instrumentation. Android notification delivery, encryption at rest, SAF permission restoration, widget rendering, and unsigned release installation have not yet been verified on physical devices. Do not treat the candidate as Play Store-ready until CI and device testing pass.
+Still incomplete against the full PRD: manually curated folders, duplicate detection (listed in the release plan, although the feature section labels it v1.5), the remaining radial actions (rename, add-to-folder, multi-select ZIP, and delete), Hindi UI localization, and integration/Compose/performance tests. The worker currently reconciles a full scan rather than demonstrating incremental indexing on large libraries. Extraction, search grammar, notification behavior, encryption at rest, SAF permission restoration, widget rendering, low-storage handling, and APK installation still need real-device verification. This is a device-test candidate, not a claim of complete v1 or Play Store readiness.
 
 ## Privacy and permissions
 
