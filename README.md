@@ -10,23 +10,26 @@ Almara is a native Android app built with Kotlin and Jetpack Compose. It indexes
 
 ## Current build status
 
-This repository is the first runnable MVP derived from the [product requirements](docs/PRD.md), not a claim that every PRD v1.0 feature is complete.
+This repository is an evolving pre-release build derived from the [product requirements](docs/PRD.md). It is not yet a complete v1.0 release.
 
 Implemented in this MVP:
 
-- Native Compose interface with warm/light and AMOLED-black themes.
-- Permission-scoped MediaStore indexing for images, videos, and audio.
-- On-device file metadata, source labels, and date-density calendar.
-- Search by text and basic `source:`, `type:`, `date:`, `name:`, and `size:` terms.
-- Saved virtual filter views; these do not move or copy files.
+- Native Compose interface with Home, Search, Folders, and Settings destinations.
+- First-run privacy/onboarding message and system, light, dark, and AMOLED theme choices.
+- Permission-scoped MediaStore indexing for images, videos, and audio, plus recursive read-only indexing of user-selected SAF folders.
+- On-device source labels, date-density calendar, and searchable local references.
+- Search by text and `source:`, `type:`, `date:`, `name:`, and `size:` terms with helpful invalid-query feedback.
+- Saved rule-backed virtual views; the app does not move or delete originals.
 - Open/share actions through Android intents.
+- Custom vintage-inspired Almara adaptive icon (arched sunburst/A monogram; not a file or folder illustration).
+- Platform-independent query, file-type, source, date, and size domain helpers with JUnit tests.
 - GitHub Actions workflow builds a debug APK and uploads it as an artifact; publishing a GitHub Release attaches the APK.
 
-Not yet implemented: PDF/document/SAF tree indexing, encrypted Room database, background incremental indexing, accurate live virtual-folder evaluation, expiry notifications/archive, full rule grammar, conversions/ZIP tools, duplicate detection, manual folders, widgets, Hindi strings, and the advanced radial menu. Saved views currently persist in app preferences, not SQLCipher. Search operators not recognized by the current MVP are ignored; this is not yet the PRD's strict error-reporting parser.
+Still not implemented for the full PRD v1: encrypted persistent file-index database (current metadata and saved views are in memory/app preferences), background incremental indexing, notification-backed expiry/archive, offline conversions and ZIP tools, duplicate detection, manual curation, widgets, Hindi localization, and an accessible radial action menu. The current folder creator does not implement live result-count preview or expiry controls. The local build must pass CI and be tested on real Android devices before any v1 or Play Store readiness claim.
 
 ## Privacy and permissions
 
-The manifest deliberately contains no `INTERNET` permission and does not request `MANAGE_EXTERNAL_STORAGE`. Android permission prompts govern access to media. Document and PDF indexing is not included in this first build. Almara records media references in memory while running; it does not copy or rename indexed files. Saved filter names and options remain in app-private preferences. Uninstalling or clearing app storage removes those preferences.
+The manifest deliberately contains no `INTERNET` permission and does not request `MANAGE_EXTERNAL_STORAGE`. Android permission prompts govern media access, and document folders are accessed only when explicitly selected through the system document picker. Almara does not copy, rename, or delete originals. Index results are currently rebuilt on refresh/app launch; saved virtual-filter metadata remains in app-private preferences. Uninstalling or clearing app storage removes saved preferences.
 
 ## Build locally
 
@@ -40,7 +43,7 @@ APK output: `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## GitHub Actions and APK releases
 
-Every push to `main` runs **Android APK**. Use the workflow's **Run workflow** button for a manual run. Successful builds publish the APK as a 30-day downloadable Actions artifact. Publishing a GitHub Release also runs the build and attaches `Almara-<tag>-debug.apk` to that release.
+Every push to `main` runs unit tests and **Android APK**. Use the workflow's **Run workflow** button for a manual run. Successful builds publish the APK as a 30-day downloadable Actions artifact. Publishing a GitHub Release also runs the build and attaches `Almara-<tag>-debug.apk` to that release.
 
 The included APK is a debug build, unsigned for Play Store distribution. A production release needs a protected signing key and a separately configured signing workflow; never commit signing credentials.
 
@@ -49,7 +52,7 @@ The included APK is a debug build, unsigned for Play Store distribution. A produ
 - Application ID: `com.almara.app`
 - Minimum Android: 8.0 (API 26)
 - Target/compile SDK: 35
-- Version: `0.1.0` / version code `1`
+- Version: `0.2.0` / version code `2` (unsigned debug build; not a v1 release)
 - License: **not yet selected**. The PRD leaves GPL-3.0 vs Apache-2.0 open; no license grant is implied until that decision is made.
 
 ## Contributing
