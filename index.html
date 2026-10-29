@@ -25,7 +25,7 @@
 <style>
 html{scroll-behavior:smooth}
 
-/* ---------- NAVIGATION: Redesigned & Fixed Spacing ---------- */
+/* ---------- NAVIGATION: Clean Logo & Spaced Links ---------- */
 header nav.top {
   display: flex !important;
   justify-content: space-between !important;
@@ -45,24 +45,29 @@ header nav.top .mark {
   flex-shrink: 0;
 }
 
+/* Fixed Logo: Bigger, flat, no shadow, blends in */
 header nav.top .mark img {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  width: 54px !important;
+  height: 54px !important;
+  object-fit: contain;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
 }
 
 /* The menu links container */
 header nav.top > div {
   display: flex !important;
   align-items: center !important;
-  gap: 28px !important; /* Adds breathing room between links */
+  gap: 32px !important; /* Nice breathing room */
   flex-wrap: nowrap !important;
 }
 
 header nav.top > div a {
   text-decoration: none;
-  font: 600 0.95rem 'Josefin Sans', sans-serif;
-  color: #fff; /* Adjusted for dark hero background */
-  opacity: 0.9;
+  font: 600 1rem 'Josefin Sans', sans-serif;
+  color: #fff;
+  opacity: 0.85;
   transition: opacity 0.2s, color 0.2s;
   white-space: nowrap;
 }
@@ -75,16 +80,20 @@ header nav.top > div a:hover {
 /* Hide the old theme toggle if it sneaks in */
 .thb { display: none !important; }
 
-/* Mobile adjustments for the nav */
+/* Mobile adjustments */
 @media (max-width: 700px) {
   header nav.top {
-    padding: 14px 0 !important;
+    padding: 12px 0 !important;
+  }
+  header nav.top .mark img {
+    width: 44px !important;
+    height: 44px !important;
   }
   header nav.top > div {
-    gap: 16px !important; /* Tighter but still readable spacing for mobile */
+    gap: 20px !important;
   }
   header nav.top > div a {
-    font-size: 0.85rem; /* Slightly smaller text to fit nicely */
+    font-size: 0.9rem;
   }
 }
 
@@ -128,7 +137,7 @@ header nav.top > div a:hover {
 .res span{background:#a4512a;border-radius:9px;padding:4px 12px;font:600 .84rem 'Josefin Sans',sans-serif;animation:in .3s both}
 @keyframes in{from{opacity:0;transform:translateY(8px)}}
 
-/* ---------- FLOATING SCROLL-TO-TOP (Redesigned) ---------- */
+/* ---------- FLOATING SCROLL-TO-TOP (No Double Layer) ---------- */
 .totop {
   position: fixed;
   right: 24px;
@@ -137,14 +146,13 @@ header nav.top > div a:hover {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: none !important; /* Removed white border causing double layer */
   cursor: pointer;
   display: grid;
   place-items: center;
-  /* Nice gradient matching the brand */
-  background: linear-gradient(135deg, #7a2603 0%, #a4512a 100%);
+  background: #a4512a; /* Clean, solid brand color */
   color: #fff;
-  box-shadow: 0 8px 24px rgba(122, 38, 3, 0.4);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
   opacity: 0;
   pointer-events: none;
   transform: translateY(20px) scale(0.9);
@@ -158,9 +166,9 @@ header nav.top > div a:hover {
 }
 
 .totop:hover {
-  background: linear-gradient(135deg, #a4512a 0%, #d9a25b 100%);
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 12px 28px rgba(122, 38, 3, 0.5);
+  background: #7a2603;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
 }
 
 .totop:focus-visible {
@@ -197,10 +205,10 @@ header nav.top > div a:hover {
 <body>
 <header class="hero" id="top"><div class="key"></div>
 <div class="w">
-  <!-- Fixed Nav: Removed redundant "ALMARA" text, added proper spacing -->
+  <!-- Clean Nav: Bigger flat logo, properly spaced links -->
   <nav class="top">
     <a class="mark" href="#top" aria-label="Almara Home">
-      <img src="assets/logo.jpg" alt="Almara Logo" width="34" height="34">
+      <img src="assets/logo.jpg" alt="Almara Logo">
     </a>
     <div>
       <a href="#features">Features</a>
