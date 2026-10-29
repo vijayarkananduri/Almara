@@ -1,12 +1,11 @@
 # Almara — Product Requirements Document (PRD) v2.0
 
-**App Name:** Almara  
-**Tagline:** **Smart Sedha.**  
+**App Name:** Almara
 
-**Platform:** Android (minSdk 26, target 35)  
-**Language:** Kotlin + Jetpack Compose  
-**License:** TBD (GPL-3.0 or Apache-2.0)  
-**Status:** Draft — Ready for Development  
+**Platform:** Android (minSdk 26, target 35)
+**Language:** Kotlin + Jetpack Compose
+**License:** TBD (GPL-3.0 or Apache-2.0)
+**Status:** Draft — Ready for Development
 **Last Updated:** 2026-10-28
 
 ---
@@ -14,9 +13,9 @@
 ## 1. Executive Summary
 
 ### 1.1 Product Vision
-Almara is a **privacy-first Android document hub** that organizes your files into **virtual folders** (references, not physical moves) and gives you a **heatmap calendar** to see file density at a glance. It is built on a nostalgic truth: **every Indian kid grew up hearing "apna almara seedha karo."** Almara is that nudge — digitized, smartened, and made private.
+Almara is a **privacy-first Android document hub** that organizes your files into **virtual folders** (references, not physical moves) and gives you a **heatmap calendar** to see file density at a glance. It is built on a nostalgic truth: **every Indian kid grew up hearing "a calmer digital cupboard."** Almara is that nudge — digitized, smartened, and made private.
 
-**No cloud. No account. No `INTERNET` permission. Files never move. Smart Sedha.**
+**No cloud. No account. No `INTERNET` permission. Files never move.**
 
 ### 1.2 The Problem
 Android file managers fail in four ways:
@@ -42,15 +41,14 @@ Android file managers fail in four ways:
 | Element | Value |
 |---------|-------|
 | **Name** | Almara (digital cupboard) |
-| **Tagline** | **Smart Sedha.** |
+| **Tagline** | **.** |
 
 | **Voice** | Warm, slightly wry, confident. Like a mother who knows best — but never preachy. |
 |
 
 **Brand principles:**
 1. **Organized, not relocated.** — The core philosophy, in four words.
-2. **Smart Sedha.** — The tagline. Bilingual pun: smart + neat/straight.
-
+2.
 
 ### 1.5 Target User
 - Privacy-conscious Android users (25–45)
@@ -658,9 +656,9 @@ Worker: ExpiryWorker (every 15 min)
 ## 7. UX Flows (with Brand Voice)
 
 ### 7.1 First Launch
-1. **Splash:** Almara logo + *"Smart Sedha."*
+1. **Splash:** Almara logo + *"."*
 2. **Welcome:** *"Your files stay on your phone. No cloud. No account. No internet permission."*
-3. **Emotional hook:** *"Remember when maa said 'apna almara seedha karo'? Now it's digital."*
+3. **Emotional hook:** *"Remember when maa said 'a calmer digital cupboard'? Now it's digital."*
 4. **Permission request:** "Allow access to your documents and images."
 5. **Indexing progress** (non-blocking).
 6. **Land on heatmap** with current month.
@@ -793,7 +791,7 @@ Worker: ExpiryWorker (every 15 min)
 - Archive section for expired folders
 - Duplicate detection (hash)
 - Manual virtual folders
-- Widgets (heatmap widget, folder widget)
+
 - Liquid Glass effect (optional)
 
 ### v2.0 (later)
@@ -860,13 +858,13 @@ Example: source:whatsapp type:pdf date:last-week size:>1mb invoice
 
 | Context | Voice | Example |
 |---------|-------|---------|
-| **Splash** | Minimal, confident | *"Almara. Smart Sedha."* |
+| **Splash** | Minimal, confident | *"Almara."* |
 | **Onboarding** | Warm, nostalgic | *"Remember maa's nudge? Now it's digital."* |
 | **Success toast** | Playful, brief | *"Maa would be proud."* |
 | **Empty state** | Gentle, inviting | *"Your almara is empty. Tap + to start."* |
 | **Error** | Clear, never blaming | *"Couldn't open this file. Try another app?"* |
 | **Settings** | Plain, functional | *"AMOLED mode: pure black backgrounds."* |
-| **Play Store** | Smart, emotional | *"Smart Sedha — your digital almara, organized like maa taught you."* |
+| **Play Store** | Smart, emotional | *" — your digital almara, organized like maa taught you."* |
 
 **Rules:**
 - Never preachy. Never "you should."
@@ -878,17 +876,17 @@ Example: source:whatsapp type:pdf date:last-week size:>1mb invoice
 
 ## 16. Appendix C: Play Store Listing (Draft)
 
-**Title:** Almara — Smart Sedha
+**Title:** Almara —
 
 **Short description:**
-> Smart Sedha — your digital almara. Virtual folders, heatmap calendar, offline. No cloud. No account.
+>  — your digital almara. Virtual folders, heatmap calendar, offline. No cloud. No account.
 
 **Full description:**
-> **Remember when maa said "apna almara seedha karo"?**
+> **Remember when maa said "a calmer digital cupboard"?**
 >
 > Almara is that nudge — digitized, smartened, and private.
 >
-> **Smart Sedha.** Your files, organized without being moved.
+> **.** Your files, organized without being moved.
 >
 > **What Almara does:**
 > • **Virtual folders** — saved filters that auto-update. Files stay where they are.
@@ -910,7 +908,7 @@ Example: source:whatsapp type:pdf date:last-week size:>1mb invoice
 > • Wallpaper-based theming.
 > • Google Sans typography.
 >
-> **Smart Sedha.** Organized, not relocated. Just like maa's almara.
+> **.** Organized, not relocated. Just like maa's almara.
 
 ---
 
@@ -934,7 +932,7 @@ Example: source:whatsapp type:pdf date:last-week size:>1mb invoice
 
 This PRD now integrates:
 - ✅ **Almara** branding
-- ✅ **"Smart Sedha"** tagline
+- ✅ **""** tagline
 - ✅ **Full design language** (Google Sans, Material 3 Expressive, AMOLED, wallpaper theming, optional Liquid Glass)
 - ✅ **All architecture** (data model, rule engine, query parser, indexing, expiry)
 - ✅ **Nostalgic UX voice** in every flow

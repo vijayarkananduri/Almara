@@ -1,10 +1,8 @@
 # Almara
 
-![Almara logo](logo/almara-logo.jpg)
-
 ## What is Almara?
 
-Almara is a private, offline-first Android file organiser. It gives local files a calendar view, search, and virtual folders without moving the original files. Remember maa’s nudge: **apna almara seedha karo** — get your digital cupboard in order.
+Almara is a private, offline-first Android file organiser. It gives local files a calendar view, search, and virtual folders without moving the original files. A calmer way to find what matters in your digital cupboard.
 
 Almara has no account, cloud sync, analytics, or internet permission. It indexes only the files and folders you allow, keeps its index and saved views on the device, and treats virtual folders as saved rules rather than copies.
 

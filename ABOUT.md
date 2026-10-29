@@ -2,7 +2,6 @@
 
 Almara is a privacy-first Android file organizer. Its core idea is simple: **organized, not relocated**. Save virtual views and use a calendar heatmap to find local media without moving it, creating an account, or connecting to a cloud service.
 
-**Tagline:** Smart Sedha.
 
 **Platform:** Android 8.0+ · Kotlin · Jetpack Compose  
 **Privacy:** No internet permission; no account, sync, or telemetry.  

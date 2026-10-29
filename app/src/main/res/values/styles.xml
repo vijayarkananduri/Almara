@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Almara" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#A4512A</item>
+        <item name="android:navigationBarColor">#FFF7F0</item>
+        <item name="android:statusBarColor">#FFF7F0</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="Theme.Almara.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#1B100B</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/almara_icon_preview</item>
+        <item name="postSplashScreenTheme">@style/Theme.Almara</item>
+    </style>
+</resources>
