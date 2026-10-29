@@ -25,37 +25,70 @@
 <style>
 html{scroll-behavior:smooth}
 
-/* ---------- NAV: hard-kill every floating / sticky / cloned navbar ---------- */
-header nav,
-nav.top,
-nav.nav,
-.navbar,
-.float-nav,
-.nav-float,
-[class*="floating-nav"],
-[class*="nav-floating"]{
+/* ---------- NAVIGATION: Redesigned & Fixed Spacing ---------- */
+header nav.top {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 18px 0 !important;
   position: static !important;
-  inset: auto !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: none !important;
-  translate: none !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
   background: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  z-index: auto !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  width: auto !important;
-  max-width: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  flex-wrap: nowrap !important;
 }
-/* old theme toggle stays out of the way even if site.js tries to show it */
-.thb{display:none !important}
 
+header nav.top .mark {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+header nav.top .mark img {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* The menu links container */
+header nav.top > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 28px !important; /* Adds breathing room between links */
+  flex-wrap: nowrap !important;
+}
+
+header nav.top > div a {
+  text-decoration: none;
+  font: 600 0.95rem 'Josefin Sans', sans-serif;
+  color: #fff; /* Adjusted for dark hero background */
+  opacity: 0.9;
+  transition: opacity 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+header nav.top > div a:hover {
+  opacity: 1;
+  color: var(--gold, #d9a25b);
+}
+
+/* Hide the old theme toggle if it sneaks in */
+.thb { display: none !important; }
+
+/* Mobile adjustments for the nav */
+@media (max-width: 700px) {
+  header nav.top {
+    padding: 14px 0 !important;
+  }
+  header nav.top > div {
+    gap: 16px !important; /* Tighter but still readable spacing for mobile */
+  }
+  header nav.top > div a {
+    font-size: 0.85rem; /* Slightly smaller text to fit nicely */
+  }
+}
+
+/* ---------- HERO SECTION ---------- */
 .hg{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;padding:18px 0 56px}
 .hero .ic path,.mic .ic path,.b .ic path,.fl path{stroke-dashoffset:0}
 .stage{position:relative}.fl:nth-of-type(1){left:-6%;top:8%}.fl:nth-of-type(2){right:-2%;top:2%;animation-delay:-2s}.fl:nth-of-type(3){left:-2%;bottom:10%;animation-delay:-4s}.fl:nth-of-type(4){right:0;bottom:6%;animation-delay:-1s}
@@ -77,7 +110,7 @@ nav.nav,
 .chips button{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:6px 12px;font:600 .85rem 'Josefin Sans';cursor:pointer;transition:.15s}.chips button:hover{border-color:var(--l4)}.chips button[aria-pressed=true]{background:var(--l4);border-color:var(--l4);color:#fff}
 .note{font-size:.78rem;color:var(--mut);margin:12px 0 0}
 
-/* ---------- voice card: compact, no dead space ---------- */
+/* ---------- VOICE CARD ---------- */
 .say{background:var(--hero);color:#fff;border-radius:24px;padding:22px 26px;display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;box-shadow:0 18px 40px rgba(0,0,0,.14)}
 .say-body{min-width:0}
 .say-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 3px}
@@ -95,12 +128,57 @@ nav.nav,
 .res span{background:#a4512a;border-radius:9px;padding:4px 12px;font:600 .84rem 'Josefin Sans',sans-serif;animation:in .3s both}
 @keyframes in{from{opacity:0;transform:translateY(8px)}}
 
-/* ---------- floating scroll-to-top only ---------- */
-.totop{position:fixed;right:18px;bottom:18px;z-index:80;width:46px;height:46px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:var(--hero,#7a2603);color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.28);opacity:0;pointer-events:none;transform:translateY(14px) scale(.9);transition:opacity .28s,transform .28s,background .2s}
-.totop.on{opacity:1;pointer-events:auto;transform:none}
-.totop:hover{background:var(--l4,#a4512a)}
-.totop:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+/* ---------- FLOATING SCROLL-TO-TOP (Redesigned) ---------- */
+.totop {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 999;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  /* Nice gradient matching the brand */
+  background: linear-gradient(135deg, #7a2603 0%, #a4512a 100%);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(122, 38, 3, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px) scale(0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+.totop.on {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.totop:hover {
+  background: linear-gradient(135deg, #a4512a 0%, #d9a25b 100%);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 28px rgba(122, 38, 3, 0.5);
+}
+
+.totop:focus-visible {
+  outline: 2px solid var(--gold, #d9a25b);
+  outline-offset: 3px;
+}
+
+/* Mobile adjustments for the floating button */
+@media(max-width:800px){
+  .totop {
+    right: 16px;
+    bottom: 16px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ---------- GENERAL RESPONSIVE ---------- */
 @media(max-width:800px){
   .hg{grid-template-columns:1fr}
   .phone{transform:none}
@@ -109,14 +187,28 @@ nav.nav,
   .mic .ic{width:25px;height:25px}
   .q{font-size:.95rem}
   .fl{display:none}
-  .totop{right:14px;bottom:14px;width:44px;height:44px}
 }
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.totop{transition:none}}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .totop{transition:none}
+}
 </style>
 </head>
 <body>
 <header class="hero" id="top"><div class="key"></div>
-<div class="w"><nav class="top"><a class="mark" href="#top"><img src="assets/logo.jpg" alt="" width="30" height="30">ALMARA</a><div><a href="#features">Features</a><a href="#build">Folders</a><a href="help.html">Guide</a><button class="thb" id="th2" type="button" hidden>Theme</button></div></nav>
+<div class="w">
+  <!-- Fixed Nav: Removed redundant "ALMARA" text, added proper spacing -->
+  <nav class="top">
+    <a class="mark" href="#top" aria-label="Almara Home">
+      <img src="assets/logo.jpg" alt="Almara Logo" width="34" height="34">
+    </a>
+    <div>
+      <a href="#features">Features</a>
+      <a href="#build">Folders</a>
+      <a href="help.html">Guide</a>
+    </div>
+  </nav>
+  
 <div class="hg"><div>
 <div class="script">Smart Sedha.</div><h1>Almara sedha karo.</h1>
 <p class="lead">Your phone is a messy cupboard. Find any file by when you got it, where it came from, or what it is. Nothing gets moved. Nothing leaves your phone.</p>
@@ -179,7 +271,7 @@ nav.nav,
 <small>© 2026 Vijayarka Nanduri. Almara is released under the MIT license. Android is a trademark of Google LLC. This project is not affiliated with Google.</small></div></footer>
 
 <button class="totop" id="totop" type="button" aria-label="Back to top">
-<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
 </button>
 
 <script src="assets/site.js"></script>
@@ -210,38 +302,15 @@ const onScroll=()=>totop.classList.toggle('on',window.scrollY>420);
 addEventListener('scroll',onScroll,{passive:true});onScroll();
 totop.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
 
-/* ---------- FINAL KILL: remove any floating/cloned navbar site.js injects ---------- */
+/* Forcefully ensure site.js doesn't break the nav */
 (function(){
-  const kill = el => {
-    const s = el.style;
-    s.setProperty('position','static','important');
-    s.setProperty('inset','auto','important');
-    s.setProperty('top','auto','important');
-    s.setProperty('left','auto','important');
-    s.setProperty('right','auto','important');
-    s.setProperty('bottom','auto','important');
-    s.setProperty('transform','none','important');
-    s.setProperty('translate','none','important');
-    s.setProperty('box-shadow','none','important');
-    s.setProperty('background','transparent','important');
-    s.setProperty('backdrop-filter','none','important');
-    s.setProperty('-webkit-backdrop-filter','none','important');
-    s.setProperty('z-index','auto','important');
-  };
   const clean = () => {
-    // 1) any nav that is not inside <header> is a cloned/floating nav → delete it
-    document.querySelectorAll('body nav, body .navbar, body [class*="floating-nav"], body [class*="nav-float"]').forEach(n => {
+    document.querySelectorAll('body nav, body .navbar, body [class*="floating-nav"]').forEach(n => {
       if (!n.closest('header')) n.remove();
-    });
-    // 2) anything that still computes to fixed/sticky gets flattened
-    document.querySelectorAll('header nav, nav.top, .navbar, .float-nav, .nav-float, [class*="floating-nav"], [class*="nav-float"]').forEach(el => {
-      const cs = getComputedStyle(el);
-      if (cs.position === 'fixed' || cs.position === 'sticky') kill(el);
     });
   };
   clean();
   addEventListener('scroll', clean, {passive:true});
-  addEventListener('resize', clean);
   new MutationObserver(clean).observe(document.body, {childList:true, subtree:true});
 })();
 </script>
