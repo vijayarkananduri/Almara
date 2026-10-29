@@ -22,7 +22,6 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.almara.app.domain.dateFromFilenameOrModified
 import com.almara.app.domain.detectSource
-import com.almara.app.widget.AlmaraWidgetData
 import java.time.ZoneOffset
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +39,6 @@ class IndexWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
                 db.uriMetadataDao().applyFullScan(scanGrantedFiles(applicationContext))
                 db.uriMetadataDao().deleteStale(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30))
             } finally { db.close() }
-            AlmaraWidgetData.refresh(applicationContext)
             Result.success()
         } catch (_: SecurityException) {
             Result.success()
