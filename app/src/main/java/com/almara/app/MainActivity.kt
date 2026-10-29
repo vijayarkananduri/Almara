@@ -434,6 +434,7 @@ private fun timeGreeting(name: String): String {
         }
     }
 }
+}
 
 @Composable private fun EmptyMessage(title: String, detail: String) { Column(Modifier.fillMaxWidth().padding(26.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text(title, style = MaterialTheme.typography.titleMedium); Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary) } }
 
