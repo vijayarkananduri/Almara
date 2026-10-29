@@ -25,12 +25,12 @@
 <style>
 html{scroll-behavior:smooth}
 
-/* ---------- NAVIGATION: Clean Logo & Spaced Links ---------- */
+/* ---------- NAVIGATION ---------- */
 header nav.top {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 18px 0 !important;
+  padding: 16px 0 !important;
   position: static !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -45,21 +45,22 @@ header nav.top .mark {
   flex-shrink: 0;
 }
 
-/* Fixed Logo: Bigger, flat, no shadow, blends in */
+/* Increased Logo Size & Flattened */
 header nav.top .mark img {
-  width: 54px !important;
-  height: 54px !important;
+  width: 85px !important; 
+  height: 85px !important;
   object-fit: contain;
   box-shadow: none !important;
   border-radius: 0 !important;
   background: transparent !important;
+  margin-left: -10px; /* Offsets any internal image padding */
 }
 
 /* The menu links container */
 header nav.top > div {
   display: flex !important;
   align-items: center !important;
-  gap: 32px !important; /* Nice breathing room */
+  gap: 32px !important; 
   flex-wrap: nowrap !important;
 }
 
@@ -83,11 +84,11 @@ header nav.top > div a:hover {
 /* Mobile adjustments */
 @media (max-width: 700px) {
   header nav.top {
-    padding: 12px 0 !important;
+    padding: 8px 0 !important;
   }
   header nav.top .mark img {
-    width: 44px !important;
-    height: 44px !important;
+    width: 65px !important;
+    height: 65px !important;
   }
   header nav.top > div {
     gap: 20px !important;
@@ -137,7 +138,7 @@ header nav.top > div a:hover {
 .res span{background:#a4512a;border-radius:9px;padding:4px 12px;font:600 .84rem 'Josefin Sans',sans-serif;animation:in .3s both}
 @keyframes in{from{opacity:0;transform:translateY(8px)}}
 
-/* ---------- FLOATING SCROLL-TO-TOP (No Double Layer) ---------- */
+/* ---------- FLOATING SCROLL-TO-TOP (Single flat circle, no shadow) ---------- */
 .totop {
   position: fixed;
   right: 24px;
@@ -146,13 +147,13 @@ header nav.top > div a:hover {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: none !important; /* Removed white border causing double layer */
+  border: none !important;
   cursor: pointer;
   display: grid;
   place-items: center;
-  background: #a4512a; /* Clean, solid brand color */
+  background: #a4512a; 
   color: #fff;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  box-shadow: none !important; /* Removed shadow completely */
   opacity: 0;
   pointer-events: none;
   transform: translateY(20px) scale(0.9);
@@ -167,8 +168,7 @@ header nav.top > div a:hover {
 
 .totop:hover {
   background: #7a2603;
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  transform: translateY(-2px) scale(1.05);
 }
 
 .totop:focus-visible {
@@ -176,7 +176,6 @@ header nav.top > div a:hover {
   outline-offset: 3px;
 }
 
-/* Mobile adjustments for the floating button */
 @media(max-width:800px){
   .totop {
     right: 16px;
@@ -205,7 +204,6 @@ header nav.top > div a:hover {
 <body>
 <header class="hero" id="top"><div class="key"></div>
 <div class="w">
-  <!-- Clean Nav: Bigger flat logo, properly spaced links -->
   <nav class="top">
     <a class="mark" href="#top" aria-label="Almara Home">
       <img src="assets/logo.jpg" alt="Almara Logo">
