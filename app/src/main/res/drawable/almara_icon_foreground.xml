@@ -4,8 +4,8 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:fillColor="#D9794A" android:pathData="M24,31 L54,16 L84,31 L84,78 Q84,84 78,84 L30,84 Q24,84 24,78 Z" />
-    <path android:fillColor="#3D1B11" android:pathData="M32,37 L54,26 L76,37 L76,75 L32,75 Z" />
-    <path android:fillColor="#FFE0C2" android:pathData="M40,68 L54,40 L68,68 L62,68 L58.5,60 L49.5,60 L46,68 Z M52,55 L56,55 L54,50 Z" />
-    <path android:fillColor="#A84F2A" android:pathData="M28,78h52v6h-52z" />
+    <!-- Two mirrored, rounded door handles: an abstract 'aa' mark for Almara. -->
+    <path android:fillColor="#FFF8F0" android:pathData="M18,30 C18,16 28,10 41,10 C51,10 57,14 61,21 L61,57 C61,68 55,77 44,82 C32,87 21,81 18,71 C16,64 16,57 16,49 L16,32 C16,31 17,30 18,30 Z M29,31 L29,63 C29,69 33,73 39,73 C45,73 49,69 49,63 L49,31 C49,26 45,22 39,22 C33,22 29,25 29,31 Z" />
+    <path android:fillColor="#FFF8F0" android:pathData="M90,30 C90,16 80,10 67,10 C57,10 51,14 47,21 L47,57 C47,68 53,77 64,82 C76,87 87,81 90,71 C92,64 92,57 92,49 L92,32 C92,31 91,30 90,30 Z M79,31 L79,63 C79,69 75,73 69,73 C63,73 59,69 59,63 L59,31 C59,26 63,22 69,22 C75,22 79,25 79,31 Z" />
+    <path android:fillColor="#FFF8F0" android:pathData="M47,21 C49,18 51,16 54,16 C57,16 59,18 61,21 L61,58 C59,55 57,53 54,53 C51,53 49,55 47,58 Z" />
 </vector>
