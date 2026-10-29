@@ -1,182 +1,134 @@
 <div align="center">
 
-<img src="assets/logo.jpg" alt="Almara logo" width="96" />
+<img src="assets/logo.jpg" alt="Almara logo" width="200" />
 
 # Almara
 
-**A private, offline-first Android file organiser — a calendar view for your files, without moving a single one.**
+### Smart Sedha. Almara sedha karo.
 
-<img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License" />
-<img src="https://img.shields.io/badge/Platform-Android-3DDC84.svg?logo=android&logoColor=white" alt="Android" />
-<img src="https://img.shields.io/badge/Language-Kotlin-7F52FF.svg?logo=kotlin&logoColor=white" alt="Kotlin" />
-<img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4.svg" alt="Jetpack Compose" />
-<img src="https://img.shields.io/badge/Architecture-MVVM-blue.svg" alt="MVVM" />
-<img src="https://img.shields.io/badge/Open%20Source-Yes-brightgreen.svg" alt="Open Source" />
-<img src="https://img.shields.io/badge/Internet%20Permission-None-red.svg" alt="No Internet Permission" />
+Your phone is a messy cupboard. Find any file by when you got it, where it came from, or what it is. Nothing gets moved. Nothing leaves your phone.
 
-*A calmer way to find what matters in your digital cupboard.*
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Android](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)](https://github.com/vijayarkananduri/Almara/releases)
+[![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack%20Compose-7F52FF?logo=kotlin&logoColor=white)](#built-with)
+[![Open Source](https://img.shields.io/badge/Open%20Source-Yes-ff69b4)](https://github.com/vijayarkananduri/Almara)
+[![Offline First](https://img.shields.io/badge/Offline-First-blue)](#dont-trust-us-check)
+[![Internet](https://img.shields.io/badge/Internet%20Permission-None-critical)](#dont-trust-us-check)
 
-<a href="https://vijayarkananduri.github.io/Almara/">Landing Page</a> · <a href="#download">Download APK</a> · <a href="../../issues">Report an Issue</a> · <a href="../../issues/new">Request a Feature</a>
+
+[**Download for Android**](https://github.com/vijayarkananduri/Almara/releases) · [**How to use it**](https://vijayarkananduri.github.io/Almara/help.html) · [**Website**](https://vijayarkananduri.github.io/Almara/)
 
 </div>
 
 ---
 
-## About
+## Why Almara?
 
-Almara is a private, offline-first Android file organiser. It gives local files a calendar view, search, and virtual folders without moving the original files. A calmer way to find what matters in your digital cupboard.
+In many homes, someone says it every few weeks: *almara sedha karo.* Tidy the cupboard.
 
-Almara has no account, no cloud sync, no analytics, and no internet permission. It indexes only the files and folders you allow, keeps its index and saved views on the device, and treats virtual folders as saved rules rather than copies.
+Almara does that for your phone without taking a single thing out of it. It gives your local files a calendar, a search bar and virtual folders, and leaves every original exactly where it was.
 
-This repository contains the Kotlin + Jetpack Compose Android app, local encrypted metadata storage, WorkManager indexing/expiry workers, and the GitHub Pages landing page. The `main` branch workflow builds an unsigned V1 release APK and a debug APK.
+*Maa would be proud.*
 
-## Why Almara
+## See it
 
-Most file managers show you a wall of folders. Almara shows you **when** — a month heatmap of your files, so you can find last month's invoice, last year's photo, or that PDF you downloaded "sometime in March" without digging.
+<div align="center">
 
-> No account. No cloud. No analytics. No internet permission. Your files stay exactly where they are.
+| Heatmap calendar | One day, full screen | Search |
+|:---:|:---:|:---:|
+| <img src="assets/cal.jpg" width="220" /> | <img src="assets/day.jpg" width="220" /> | <img src="assets/search.jpg" width="220" /> |
 
-## Features
+| Folder builder | Folder timer | Your look |
+|:---:|:---:|:---:|
+| <img src="assets/builder.jpg" width="220" /> | <img src="assets/timer.jpg" width="220" /> | <img src="assets/settings.jpg" width="220" /> |
 
-| Feature | Description |
+</div>
+
+## Everything it does
+
+**Heatmap calendar.** Busy days glow. Tap one to open its files. Remember when, not where.
+
+**Virtual folders.** Combine source, type, date and name. Save the rule as a folder. Files never move.
+
+**Folder timer.** Let a folder vanish after an hour, a day or a week.
+
+**Search.** Find something without remembering where it went.
+
+**Your look.** System, Light, Dark and AMOLED, plus wallpaper colors.
+
+**Local library.** Add a specific folder or refresh the index any time.
+
+**Private by design.** No account, no cloud, no analytics.
+
+**Voice search.** Coming soon. Say it, get the filter.
+
+## Filter like you shop online
+
+Pick a source, a type and a time range, watch the count shrink, then save the rule as a folder. Nothing is copied or moved.
+
+| Filter | Options |
 |---|---|
-| Month Heatmap | See your files as a calendar — instantly spot when things landed |
-| Local Search | Fast, on-device search across everything you've allowed |
-| Virtual Folders | Saved rule-based views — not copies. Original files never move |
-| Expiry Reminders | Optional reminders for files you don't want to keep forever |
-| Offline Conversion | Selected local conversion tools — no server, no upload |
-| Share | Share files straight from any view |
-| Private by Design | Encrypted local metadata, zero telemetry, zero network calls |
+| Source | All, WhatsApp, Telegram, Camera, Screenshot, Download |
+| File type | All, Images, Videos, PDFs, Docs |
+| Time range | Today, This week, This month |
+| Expires | Never, 1 hour, 1 day, 1 week |
 
-## Screenshots
+## Don't trust us. Check.
 
-**Home — your files at a glance**
+Almara has no account, no cloud sync and no analytics. The app declares no internet permission, so it has no way to send your files anywhere. The source is open under the MIT license.
 
-<img src="assets/builder.jpg" alt="Almara home screen" width="260" />
+| | |
+|---|---|
+| **No internet** | No network permission in the app. |
+| **Stays put** | Originals are never moved, renamed or copied. |
+| **Encrypted index** | The index and saved views live on your phone. |
+| **Open source** | Read every line. You are looking at it. |
 
-**Month Heatmap — files as a calendar**
+## Get Almara
 
-<img src="assets/cal.jpg" alt="Almara month heatmap calendar view" width="260" />
+Free and open source.
 
-**Day View — everything from a single day**
+1. Open [**Releases**](https://github.com/vijayarkananduri/Almara/releases) and download the latest APK.
+2. Installing outside the Play Store? Android may ask you to allow it once. The [guide](https://vijayarkananduri.github.io/Almara/help.html) shows where.
+3. Open Almara and pick the folders you want it to index.
 
-<img src="assets/day.jpg" alt="Almara day view" width="260" />
+> The release APK is currently unsigned.
 
-**Search — fast, fully on-device**
-
-<img src="assets/search.jpg" alt="Almara local search" width="260" />
-
-**Expiry Reminders — optional timers for temporary files**
-
-<img src="assets/timer.jpg" alt="Almara expiry reminder" width="260" />
-
-**Settings — private, local, yours**
-
-<img src="assets/settings.jpg" alt="Almara settings" width="260" />
-
-## Download
-
-Grab the latest unsigned V1 release APK or the debug APK from the <a href="../../actions">Actions</a> workflow artifacts on the `main` branch.
-
-Requires Android **8.0 (API 26)+** — adjust to your actual `minSdk`.
-
-## Tech Stack
-
-- **Kotlin** — 100% Kotlin codebase
-- **Jetpack Compose** — declarative, modern UI
-- **Room + Encrypted Metadata** — on-device storage, nothing leaves the phone
-- **WorkManager** — background indexing and expiry reminder workers
-- **MVVM architecture** — clean, testable separation
-
-## Project Structure
-
-```
-Almara/
-├── app/                    # Android app (Kotlin + Jetpack Compose)
-│   ├── ui/                 # Compose screens (heatmap, search, folders)
-│   ├── data/               # Room DB + encrypted metadata
-│   └── workers/            # WorkManager indexing / expiry jobs
-├── assets/                 # Landing page & README images
-│   ├── logo.jpg            # App logo
-│   ├── builder.jpg         # Home screen
-│   ├── cal.jpg             # Month heatmap / calendar view
-│   ├── day.jpg             # Day view
-│   ├── search.jpg          # Local search
-│   ├── timer.jpg           # Expiry reminder / timer
-│   ├── settings.jpg        # Settings
-│   ├── og.png / og.svg     # Social preview image
-│   ├── site.js             # Landing page scripts
-│   └── style.css           # Landing page styles
-└── .github/workflows/      # CI — builds release + debug APK
-```
-
-## Build from Source
+## Build from source
 
 ```bash
-# Clone
 git clone https://github.com/vijayarkananduri/Almara.git
 cd Almara
-
-# Build release APK (unsigned)
-./gradlew assembleRelease
-
-# Build debug APK
 ./gradlew assembleDebug
 ```
 
-APKs are output to `app/build/outputs/apk/`.
+The debug APK lands in `app/build/outputs/apk/debug/`. You need Android Studio (latest stable), JDK 17+ and the Android SDK.
 
-## Roadmap
+## Built with
 
-- [ ] Material You dynamic theming
-- [ ] Virtual folder templates (e.g. "All PDFs this year")
-- [ ] Widgets: month heatmap on home screen
-- [ ] Tag-based organisation
-- [ ] i18n / localisation
+Kotlin, Jetpack Compose, WorkManager for indexing and expiry, encrypted local metadata, and GitHub Actions, which builds an unsigned V1 release APK and a debug APK on every push to `main`.
 
-## Contributing
+## Contribute
 
-Contributions are welcome — bug reports, feature ideas, and pull requests:
+Issues, ideas and pull requests are welcome.
 
-1. **Fork** the repository
-2. Create a feature branch — `git checkout -b feat/my-idea`
-3. Commit with clear messages — `git commit -m "Add: my idea"`
-4. Push and open a **Pull Request**
-
-Please keep the core promise intact: offline-first, no trackers, no internet permission.
-
-## Privacy
-
-Almara indexes only the files and folders you explicitly allow. Its index, saved views, and metadata live on your device (encrypted). Virtual folders are saved rules, not copies. There is no account, no sync, no analytics, and the app requests no internet permission — this is not a policy, it's the architecture.
+1. Fork the repo
+2. Create a branch: `git checkout -b feature/my-idea`
+3. Commit your changes
+4. Open a pull request
 
 ## License
 
-MIT License — Copyright (c) 2026 Vijay Ark Ananduri
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+[MIT](LICENSE). Use it, change it, share it.
 
 ---
 
 <div align="center">
 
-Made with zero internet permissions.
+**Maa would be proud.**
 
-Star this repo if Almara brought some calm to your digital cupboard.
+[Guide](https://vijayarkananduri.github.io/Almara/help.html) · [Source](https://github.com/vijayarkananduri/Almara) · [Releases](https://github.com/vijayarkananduri/Almara/releases) · [Built by Vijayarka](https://vijayarka.netlify.app/)
+
+© 2026 Vijayarka Nanduri. Released under the MIT license.
 
 </div>
