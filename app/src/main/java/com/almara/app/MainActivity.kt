@@ -17,6 +17,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.expandVertically
@@ -115,7 +116,7 @@ private val AlmaraDisplayFont = FontFamily(Font(R.font.caveat))
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splash = androidx.core.splashscreen.SplashScreen.installSplashScreen(this)
+        val splash = installSplashScreen()
         splash.setOnExitAnimationListener { provider ->
             provider.view.animate().alpha(0f).scaleX(1.08f).scaleY(1.08f).setDuration(420L).withEndAction { provider.remove() }.start()
         }
