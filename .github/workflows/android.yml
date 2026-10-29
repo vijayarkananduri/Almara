@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       publish_direct_apk:
-        description: 'Publish the debug APK as a direct GitHub Release download'
+        description: 'Publish unsigned CI APKs as a direct GitHub Release download (not for stable releases)'
         required: false
-        default: true
+        default: false
         type: boolean
   release:
     types: [published]
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   build:
-    name: Build unsigned Almara V1 APKs
+    name: Test and build Almara V1 APKs
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -37,11 +37,11 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Run unit tests
-        run: gradle --no-daemon :app:testDebugUnitTest
+        run: ./gradlew --no-daemon :app:testDebugUnitTest
       - name: Assemble debug APK
-        run: gradle --no-daemon :app:assembleDebug
+        run: ./gradlew --no-daemon :app:assembleDebug
       - name: Assemble unsigned release APK
-        run: gradle --no-daemon :app:assembleRelease
+        run: ./gradlew --no-daemon :app:assembleRelease
       - name: Rename APKs
         run: cp app/build/outputs/apk/debug/app-debug.apk Almara-V1-debug.apk
       - name: Rename unsigned release APK
@@ -56,7 +56,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Attach APK to GitHub Release
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' && github.event.release.prerelease
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${GITHUB_REF_NAME}" Almara-*-debug.apk Almara-*-unsigned.apk --clobber
