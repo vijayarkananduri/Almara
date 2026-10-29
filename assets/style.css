@@ -9,9 +9,9 @@ a{color:inherit}.w{width:min(1060px,calc(100% - 32px));margin:auto}
 .key{height:24px;background:var(--key) repeat-x;opacity:.85}
 .hero{background:var(--hero);color:#fff;position:relative;overflow:hidden}
 .hero:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 78% 40%,#a4512a 0,transparent 55%);opacity:.55}
-nav.top{position:relative;display:flex;justify-content:space-between;align-items:center;padding:14px 0}
-.mark{display:flex;align-items:center;gap:10px;font:700 1.1rem 'Josefin Sans';letter-spacing:.28em;text-decoration:none}.mark img{width:30px;height:30px;border-radius:8px}
-nav.top a:not(.mark){font:600 .92rem 'Josefin Sans';opacity:.9;margin-left:18px;text-decoration:none}nav.top a:not(.mark):hover{color:var(--gold)}
+nav.top{position:relative;display:flex;justify-content:space-between;align-items:center;padding:12px 0}
+.mark{display:flex;align-items:center;text-decoration:none;line-height:0}.mark img{width:48px;height:48px;display:block;object-fit:contain;border-radius:10px;transition:transform .2s}.mark:hover img{transform:scale(1.04)}
+.nav-links{display:flex;align-items:center;gap:16px}.nav-links a{font:600 .92rem 'Josefin Sans';opacity:.9;text-decoration:none}.nav-links a:hover{color:var(--gold)}
 .script{font:600 1.8rem Caveat,cursive;color:var(--gold)}
 h1{font-size:clamp(3.1rem,9vw,6.6rem);letter-spacing:-.015em;margin:2px 0 14px}
 .lead{max-width:29em;font-size:1.15rem;opacity:.94}
@@ -44,5 +44,5 @@ footer{background:var(--hero);color:#fff;text-align:center;padding-bottom:84px}f
 .fl{position:absolute;width:44px;height:44px;color:var(--gold);opacity:.8;animation:fl 6s ease-in-out infinite}.fl .ic{width:100%;height:100%;color:inherit}.fl .ic path{stroke-dashoffset:0}@keyframes fl{50%{transform:translateY(-14px) rotate(6deg)}}
 .steps{counter-reset:s;list-style:none;padding:0;margin:12px 0 0}.steps li{counter-increment:s;position:relative;padding:6px 0 6px 40px}.steps li:before{content:counter(s);position:absolute;left:0;top:5px;width:28px;height:28px;border-radius:50%;background:var(--l4);color:#fff;font:700 .9rem 'Josefin Sans';display:grid;place-items:center}
 .tip{margin-top:12px;padding:12px 14px;border-left:4px solid var(--gold);background:var(--card);border-radius:0 12px 12px 0;font-size:.95rem;color:var(--mut)}
-@media(max-width:800px){.split{grid-template-columns:1fr}.pf{grid-template-columns:1fr 1fr}.sec{padding:46px 0}.ft a span,.ft button span{display:none}.ft a,.ft button{padding:0 13px}}
+@media(max-width:800px){.split{grid-template-columns:1fr}.pf{grid-template-columns:1fr 1fr}.sec{padding:46px 0}.nav-links{gap:9px}.nav-links a{font-size:.8rem}.ft a span,.ft button span{display:none}.ft a,.ft button{padding:0 13px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}.ic path{stroke-dashoffset:0}}

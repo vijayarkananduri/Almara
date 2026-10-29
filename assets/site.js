@@ -26,13 +26,12 @@ try{th=localStorage.getItem('almara-theme')||(matchMedia('(prefers-color-scheme:
 R.dataset.theme=th;
 /* floating tab */
 const ft=document.createElement('nav');ft.className='ft';ft.setAttribute('aria-label','Quick links');
-const L=(h,i,t)=>`<a href="${h}"><span class="ic" data-i="${i}"></span><span>${t}</span></a>`;
-ft.innerHTML=L('index.html#top','home','Home')+L('help.html','help','Guide')+L('index.html#verify','shield','Privacy')+`<button id="th" type="button"><span class="ic" data-i="moon"></span><span id="thl"></span></button><button id="up" type="button" aria-label="Back to top"><span class="ic" data-i="up"></span></button>`;
+const quickLink=(h,i,t)=>`<a href="${h}"><span class="ic" data-i="${i}"></span><span>${t}</span></a>`;
+ft.innerHTML=quickLink('index.html#top','home','Home')+quickLink('help.html','help','Guide')+quickLink('index.html#verify','shield','Privacy')+`<button id="th" type="button"><span class="ic" data-i="moon"></span><span id="thl"></span></button>`;
 document.body.append(ft);
 ft.querySelectorAll('[data-i]').forEach(e=>{e.innerHTML=svg(e.dataset.i)});
 const lab=()=>{document.getElementById('thl').textContent=th==='amoled'?'AMOLED':th[0].toUpperCase()+th.slice(1);document.getElementById('th').setAttribute('aria-label','Theme: '+th+'. Switch theme')};lab();
 document.getElementById('th').onclick=()=>{th=M[(M.indexOf(th)+1)%3];R.dataset.theme=th;lab();try{localStorage.setItem('almara-theme',th)}catch(e){}};
-document.getElementById('up').onclick=()=>scrollTo({top:0,behavior:'smooth'});
 let y=0;addEventListener('scroll',()=>{const d=scrollY-y;if(d<-6&&scrollY>420)ft.classList.add('show');else if(d>6||scrollY<300)ft.classList.remove('show');y=scrollY},{passive:true});
 /* reveal svg icons */
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.35});
