@@ -20,19 +20,10 @@ eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 
 dl:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>'};
 const svg=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n].replace(/<path /g,'<path pathLength="1" ')}</svg>`;
 document.querySelectorAll('[data-i]').forEach(e=>{e.classList.add('ic');e.innerHTML=svg(e.dataset.i)});
-/* theme */
-const M=['light','dark','amoled'],R=document.documentElement;let th='light';
-try{th=localStorage.getItem('almara-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light')}catch(e){}
-R.dataset.theme=th;
-/* floating tab */
-const ft=document.createElement('nav');ft.className='ft';ft.setAttribute('aria-label','Quick links');
-const quickLink=(h,i,t)=>`<a href="${h}"><span class="ic" data-i="${i}"></span><span>${t}</span></a>`;
-ft.innerHTML=quickLink('index.html#top','home','Home')+quickLink('help.html','help','Guide')+quickLink('index.html#verify','shield','Privacy')+`<button id="th" type="button"><span class="ic" data-i="moon"></span><span id="thl"></span></button>`;
-document.body.append(ft);
-ft.querySelectorAll('[data-i]').forEach(e=>{e.innerHTML=svg(e.dataset.i)});
-const lab=()=>{document.getElementById('thl').textContent=th==='amoled'?'AMOLED':th[0].toUpperCase()+th.slice(1);document.getElementById('th').setAttribute('aria-label','Theme: '+th+'. Switch theme')};lab();
-document.getElementById('th').onclick=()=>{th=M[(M.indexOf(th)+1)%3];R.dataset.theme=th;lab();try{localStorage.setItem('almara-theme',th)}catch(e){}};
-let y=0;addEventListener('scroll',()=>{const d=scrollY-y;if(d<-6&&scrollY>420)ft.classList.add('show');else if(d>6||scrollY<300)ft.classList.remove('show');y=scrollY},{passive:true});
+/* compact scroll-to-top control */
+const ft=document.createElement('button');ft.className='ft';ft.type='button';ft.setAttribute('aria-label','Scroll to top');ft.innerHTML=svg('up');document.body.append(ft);
+ft.onclick=()=>scrollTo({top:0,behavior:'smooth'});
+addEventListener('scroll',()=>{if(scrollY>520)ft.classList.add('show');else ft.classList.remove('show')},{passive:true});
 /* reveal svg icons */
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.35});
 document.querySelectorAll('.rv').forEach(e=>io.observe(e));

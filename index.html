@@ -18,13 +18,12 @@
 <meta property="og:image" content="https://vijayarkananduri.github.io/Almara/assets/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Almara, private offline file finder for Android">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Almara sedha karo."><meta name="twitter:description" content="Private, offline, open source file finder for Android."><meta name="twitter:image" content="https://vijayarkananduri.github.io/Almara/assets/og.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Almara","alternateName":"Smart Sedha","operatingSystem":"Android","applicationCategory":"UtilitiesApplication","description":"Private, offline Android app that finds files by date, source and type using virtual folders. Originals are never moved.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://opensource.org/licenses/MIT","downloadUrl":"https://github.com/vijayarkananduri/Almara/releases","url":"https://vijayarkananduri.github.io/Almara/","author":{"@type":"Person","name":"Vijayarka Nanduri","url":"https://vijayarka.netlify.app/"}}</script>
-<script>try{var t=localStorage.getItem('almara-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Josefin+Sans:wght@400;600;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <style>
 .hg{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;padding:18px 0 56px}
-.hero .ic path,.mic .ic path,.b .ic path,.fl path{stroke-dashoffset:0}.thb{background:none;border:1.5px solid rgba(255,255,255,.5);color:#fff;border-radius:999px;height:34px;padding:0 14px;margin-left:16px;font:600 .85rem 'Josefin Sans';cursor:pointer}
+.hero .ic path,.mic .ic path,.b .ic path,.fl path{stroke-dashoffset:0}
 .stage{position:relative}.fl:nth-of-type(1){left:-6%;top:8%}.fl:nth-of-type(2){right:-2%;top:2%;animation-delay:-2s}.fl:nth-of-type(3){left:-2%;bottom:10%;animation-delay:-4s}.fl:nth-of-type(4){right:0;bottom:6%;animation-delay:-1s}
 .phone{width:280px;margin:auto;background:#0f0805;border-radius:38px;padding:9px;box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 2px #3b1708;transform:rotate(3deg);transition:transform .4s;position:relative}.phone:hover{transform:rotate(0)}
 .app{background:#fffaf5;border-radius:30px;height:520px;position:relative;overflow:hidden;color:#1b0a04;padding:16px 13px;font-family:'Josefin Sans',sans-serif}
@@ -43,17 +42,16 @@
 .cnt{font:700 3.2rem 'Josefin Sans';color:var(--l4);line-height:1}.cnt+small{color:var(--mut)}.grp{margin:12px 0 4px;font:700 .9rem 'Josefin Sans'}.chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:6px 12px;font:600 .85rem 'Josefin Sans';cursor:pointer;transition:.15s}.chips button:hover{border-color:var(--l4)}.chips button[aria-pressed=true]{background:var(--l4);border-color:var(--l4);color:#fff}
 .note{font-size:.78rem;color:var(--mut);margin:12px 0 0}
-.say{background:var(--hero);color:#fff;border-radius:28px;padding:34px;display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center}
-.mic{width:80px;height:80px;border-radius:50%;border:0;background:var(--gold);color:#2a0e04;cursor:pointer;position:relative;display:grid;place-items:center}.mic .ic{width:38px;height:38px}
+.voice-section{padding-top:24px;padding-bottom:24px}.say{max-width:820px;margin:auto;background:var(--hero);color:#fff;border-radius:22px;padding:20px 24px;display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}.mic{width:62px;height:62px;border-radius:50%;border:0;background:var(--gold);color:#2a0e04;cursor:pointer;position:relative;display:grid;place-items:center}.mic .ic{width:30px;height:30px}
 .mic.on:after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--gold);animation:p 1s infinite}@keyframes p{to{transform:scale(1.5);opacity:0}}
-.q{font:400 1.6rem 'Josefin Sans';min-height:2.1em}.res{display:flex;gap:8px;flex-wrap:wrap;min-height:36px}.res span{background:#a4512a;border-radius:10px;padding:4px 12px;font:600 .88rem 'Josefin Sans';animation:in .3s both}@keyframes in{from{opacity:0;transform:translateY(8px)}}
+.voice-copy{min-width:0}.q{font:400 1.35rem 'Josefin Sans';min-height:1.5em;margin-top:4px}.res{display:flex;gap:8px;flex-wrap:wrap;min-height:28px}.res span{background:#a4512a;border-radius:10px;padding:4px 12px;font:600 .88rem 'Josefin Sans';animation:in .3s both}@keyframes in{from{opacity:0;transform:translateY(8px)}}
 .soon{display:inline-block;background:var(--gold);color:#2a0e04;font:700 .78rem 'Josefin Sans';border-radius:8px;padding:2px 10px}
-@media(max-width:800px){.hg,.say{grid-template-columns:1fr}.phone{transform:none}.say{padding:24px}.fl{display:none}}
+@media(max-width:800px){.hg{grid-template-columns:1fr}.phone{transform:none}.voice-section{padding:18px 0}.say{padding:18px;gap:14px}.fl{display:none}}
 </style>
 </head>
 <body>
 <header class="hero" id="top"><div class="key"></div>
-<div class="w"><nav class="top"><a class="mark" href="#top"><img src="assets/logo.jpg" alt="Almara logo" width="48" height="48"></a><div class="nav-links"><a href="#features">Features</a><a href="#build">Folders</a><a href="help.html">Guide</a><button class="thb" id="th2" type="button">Theme</button></div></nav>
+<div class="w"><nav class="top"><a class="mark" href="#top"><img src="assets/logo.jpg" alt="Almara logo" width="48" height="48"></a><div class="nav-links"><a href="#features">Features</a><a href="#build">Folders</a><a href="help.html">Guide</a></div></nav>
 <div class="hg"><div>
 <div class="script">Smart Sedha.</div><h1>Almara sedha karo.</h1>
 <p class="lead">Your phone is a messy cupboard. Find any file by when you got it, where it came from, or what it is. Nothing gets moved. Nothing leaves your phone.</p>
@@ -98,8 +96,7 @@
 <p>Almara has no account, no cloud sync and no analytics. The app declares no internet permission, so it has no way to send your files anywhere. The source is open under the MIT license.</p>
 <div class="pf"><div class="rv"><span data-i="nowifi"></span><h3>No internet</h3><p>No network permission in the app.</p></div><div class="rv"><span data-i="folder"></span><h3>Stays put</h3><p>Originals are never moved, renamed or copied.</p></div><div class="rv"><span data-i="shield"></span><h3>Encrypted index</h3><p>The index and saved views live on your phone.</p></div><div class="rv"><span data-i="code"></span><h3>Open source</h3><p><a href="https://github.com/vijayarkananduri/Almara">Read every line.</a></p></div></div></div></section>
 
-<section class="sec"><div class="w"><div class="say"><button class="mic" id="mic" aria-label="Try a sample voice query"><span data-i="mic"></span></button>
-<div><span class="soon">Coming soon</span><div class="q" id="q">Tap and say it.</div><div class="res" id="res"></div></div></div></div></section>
+<section class="sec voice-section"><div class="w"><div class="say"><button class="mic" id="mic" aria-label="Try a sample voice query"><span data-i="mic"></span></button><div class="voice-copy"><span class="soon">Coming soon</span><div class="q" id="q">Try a sample voice search</div><div class="res" id="res"></div></div></div></div></section>
 
 <section class="sec" id="get" style="padding-top:0"><div class="w"><h2>Get Almara.</h2>
 <p>Free and open source. Download the latest APK from GitHub Releases. Installing outside the Play Store? Android may ask you to allow it once. The guide shows where.</p>
@@ -113,7 +110,6 @@
 <script src="assets/site.js"></script>
 <script>
 const $=s=>document.querySelector(s),L=[0,1,2,0,2,1,1,2,1,4,1,1,3,3,2,3,0,0,3,3,4,3,4,1,3,2,3,4,4,3,0,0],C=['var(--l0)','var(--l1)','var(--l2)','var(--l3)','var(--l4)'],cal=$('#cal'),app=$('#app');
-$('#th2').onclick=()=>$('#th').click();
 'MTWTFSS'.split('').forEach(d=>cal.insertAdjacentHTML('beforeend',`<i>${d}</i>`));for(let i=0;i<3;i++)cal.insertAdjacentHTML('beforeend','<span></span>');
 for(let d=1;d<=31;d++){const b=document.createElement('button'),l=L[d]||0;b.textContent=d;b.dataset.l=l;b.style.background=C[l];b.setAttribute('aria-label','Oct '+d);
 b.onclick=()=>{const col=(3+d-1)%7,n=[2,5,9,16,26][l]+d%3,left=col<=3;$('#bd').textContent=d;$('#badge').style.left=left?'13px':'auto';$('#badge').style.right=left?'auto':'13px';
