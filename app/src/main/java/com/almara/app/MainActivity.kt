@@ -25,7 +25,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.snap
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.Image as ComposeImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.verticalScroll
@@ -45,6 +45,7 @@ import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Slideshow
 import androidx.compose.material.icons.rounded.TableChart
 import androidx.compose.material.icons.rounded.VideoFile
@@ -302,7 +303,7 @@ private fun AlmaraApp() {
         }, floatingActionButton = { if (tab == AlmaraTab.HOME || tab == AlmaraTab.FOLDERS) FloatingActionButton(onClick = { showCreate = true }) { Icon(Icons.Rounded.Add, "Create virtual folder") } }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp)) {
                 Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Image(painterResource(R.drawable.almara_icon_image), "Almara logo", Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop)
+                    ComposeImage(painterResource(R.drawable.almara_icon_image), "Almara logo", Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) { Text("Almara", fontFamily = AlmaraDisplayFont, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, lineHeight = 30.sp); Text("Smart Sedha.", fontFamily = AlmaraDisplayFont, fontSize = 17.sp, color = MaterialTheme.colorScheme.secondary) }
                     if (indexing) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
