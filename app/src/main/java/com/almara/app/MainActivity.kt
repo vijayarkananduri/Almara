@@ -113,6 +113,7 @@ private data class SavedView(val id: String, val title: String, val source: Stri
 private enum class AlmaraTab { HOME, SEARCH, FOLDERS, SETTINGS }
 private enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
 private val AlmaraDisplayFont = FontFamily(Font(R.font.caveat))
+private val AlmaraWordmarkFont = FontFamily.SansSerif
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -305,7 +306,10 @@ private fun AlmaraApp() {
         }, floatingActionButton = { if (tab == AlmaraTab.HOME || tab == AlmaraTab.FOLDERS) FloatingActionButton(onClick = { showCreate = true }) { Icon(Icons.Rounded.Add, "Create virtual folder") } }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp)) {
                 Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) { Text("Almara", fontFamily = AlmaraDisplayFont, fontSize = 34.sp, fontWeight = FontWeight.SemiBold, lineHeight = 34.sp) }
+                    Column(Modifier.weight(1f)) {
+                        Text("ALMARA", fontFamily = AlmaraWordmarkFont, fontSize = 28.sp, fontWeight = FontWeight.Light, letterSpacing = 2.2.sp, lineHeight = 30.sp)
+                        Text("Smart Sedha.", fontFamily = AlmaraDisplayFont, fontSize = 17.sp, fontWeight = FontWeight.Medium, lineHeight = 18.sp, color = MaterialTheme.colorScheme.secondary)
+                    }
                     if (indexing) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                 }
                 when (tab) {
