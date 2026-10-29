@@ -37,6 +37,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.AudioFile
@@ -60,6 +62,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -136,7 +139,7 @@ private fun AlmaraApp() {
     var optionalName by remember { mutableStateOf(prefs.getString("optional_name", "") ?: "") }
     var dynamicColor by remember { mutableStateOf(prefs.getBoolean("dynamic_color", false)) }
     var paletteRefresh by remember { mutableStateOf(0) }
-    var recentFilesEnabled by remember { mutableStateOf(prefs.getBoolean("show_recent_files", true)) }
+    var recentFilesEnabled by remember { mutableStateOf(prefs.getBoolean("show_recent_files", false)) }
     var puffyButtons by remember { mutableStateOf(prefs.getBoolean("puffy_buttons", false)) }
     var startupSetupStage by remember { mutableStateOf(0) }
     var status by remember { mutableStateOf("Your files stay on this phone. Nothing is uploaded.") }
@@ -296,23 +299,31 @@ private fun AlmaraApp() {
                 }
                 when (tab) {
                     AlmaraTab.HOME -> {
-                        Text("Your files, in order.", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+                        Text(timeGreeting(optionalName), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
                         Row(Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary)
                             Text("  ${month.format(DateTimeFormatter.ofPattern("MMMM yyyy"))}", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                            TextButton(onClick = { month = month.minusMonths(1); selectedDay = null }) { Text("‹") }
-                            TextButton(onClick = { month = month.plusMonths(1); selectedDay = null }) { Text("›") }
+                            IconButton(onClick = { month = month.minusMonths(1); selectedDay = null; calendarCollapsed = false }) { Icon(Icons.Rounded.ArrowBack, "Previous month") }
+                            IconButton(onClick = { month = month.plusMonths(1); selectedDay = null; calendarCollapsed = false }) { Icon(Icons.Rounded.ArrowForward, "Next month") }
                         }
-                        AnimatedVisibility(visible = !calendarCollapsed, enter = expandVertically(), exit = shrinkVertically()) {
+                        AnimatedVisibility(visible = !calendarCollapsed, enter = expandVertically(animationSpec = spring(dampingRatio = .92f, stiffness = 700f)), exit = shrinkVertically(animationSpec = spring(dampingRatio = .92f, stiffness = 700f))) {
                             Column {
                                 Heatmap(month, files, selectedDay, onSelect = { selectedDay = if (selectedDay == it) null else it; calendarCollapsed = false })
                                 HeatmapScale()
                             }
                         }
-                        if (calendarCollapsed && selectedDay != null) DateBadge(selectedDay!!, month)
-                        Text(if (selectedDay != null) "${selectedDay!!.format(DateTimeFormatter.ofPattern("MMM d"))} · ${files.count { it.day == selectedDay }} files" else "Your files", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 4.dp))
-                        if (recentFilesEnabled || selectedDay != null) FileList(files, "", selectedDay, expanded = !calendarCollapsed, onScrollChanged = { movingUp -> if (selectedDay != null) calendarCollapsed = movingUp }, onOpen = { openFile(context, it) }, onShare = { shareFile(context, it) }, onDeleteReference = { file -> files = files.filterNot { it.uri == file.uri }; status = "Removed from this view. The original file is untouched." })
+                        val selectedCount = selectedDay?.let { day -> files.count { it.day == day } } ?: 0
+                        if (selectedDay != null || recentFilesEnabled) {
+                            if (calendarCollapsed && selectedDay != null) {
+                                Box(Modifier.fillMaxWidth()) {
+                                    FileList(files, "", selectedDay, expanded = true, onScrollChanged = { movingUp -> if (selectedCount >= 3) calendarCollapsed = movingUp }, onOpen = { openFile(context, it) }, onShare = { shareFile(context, it) }, onDeleteReference = { file -> files = files.filterNot { it.uri == file.uri }; status = "Removed from this view. The original file is untouched." })
+                                    DateBadge(selectedDay!!, month, Modifier.align(Alignment.TopCenter).zIndex(3f), onClick = { calendarCollapsed = false })
+                                }
+                            } else {
+                                FileList(files, "", selectedDay, expanded = false, onScrollChanged = { movingUp -> if (selectedCount >= 3) calendarCollapsed = movingUp }, onOpen = { openFile(context, it) }, onShare = { shareFile(context, it) }, onDeleteReference = { file -> files = files.filterNot { it.uri == file.uri }; status = "Removed from this view. The original file is untouched." })
+                            }
+                        }
                     }
                     AlmaraTab.SEARCH -> {
                         Text(selectedFolder?.title ?: "Find something without remembering where it went.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 10.dp))
@@ -324,7 +335,7 @@ private fun AlmaraApp() {
                         if (views.isEmpty()) EmptyMessage("No virtual folders yet.", "Create one with +. Files are never copied or moved.")
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(views, key = { it.id }) { folder ->
                             var menu by remember(folder.id) { mutableStateOf(false) }
-                            Card(Modifier.fillMaxWidth().combinedClickable(onClick = { selectedFolderId = folder.id; searchQuery = ""; tab = AlmaraTab.SEARCH }, onLongClick = { selectedFolderId = folder.id }), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                            Card(Modifier.fillMaxWidth().combinedClickable(onClick = { selectedFolderId = folder.id; searchQuery = ""; tab = AlmaraTab.SEARCH }, onLongClick = { }), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                                 Column(Modifier.padding(16.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Rounded.Folder, null, tint = MaterialTheme.colorScheme.primary)
@@ -335,10 +346,10 @@ private fun AlmaraApp() {
                                             IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = "Folder actions") }
                                             DropdownMenu(menu, { menu = false }) {
                                                 DropdownMenuItem(text = { Text("Open") }, onClick = { menu = false; selectedFolderId = folder.id; searchQuery = ""; tab = AlmaraTab.SEARCH })
-                                                DropdownMenuItem(text = { Text("Edit") }, onClick = { menu = false; editingFolder = folder })
+                                                DropdownMenuItem(text = { Text("Edit filters") }, onClick = { menu = false; editingFolder = folder })
                                                 DropdownMenuItem(text = { Text("Timer") }, onClick = { menu = false; timerFolder = folder })
                                                 DropdownMenuItem(text = { Text("Archive") }, onClick = { menu = false; persistViews(views.map { if (it.id == folder.id) it.copy(archiveOnExpiry = !it.archiveOnExpiry) else it }) })
-                                                DropdownMenuItem(text = { Text("Remove") }, onClick = { menu = false; persistViews(views.filterNot { it.id == folder.id }); selectedFolderId = null })
+                                                DropdownMenuItem(text = { Text("Remove folder") }, onClick = { menu = false; persistViews(views.filterNot { it.id == folder.id }); selectedFolderId = null })
                                             }
                                         }
                                     }
@@ -348,7 +359,7 @@ private fun AlmaraApp() {
                                 }
                             }
                         } }
-                        selectedFolderId?.let { id -> Text("Long-press selected folder to remove its saved rule. Original files are always preserved.", style = MaterialTheme.typography.bodySmall) }
+                        if (views.isNotEmpty()) Text("Tap the three dots for folder actions. Original files are always preserved.", style = MaterialTheme.typography.bodySmall)
                     }
                     AlmaraTab.SETTINGS -> SettingsScreen(mode, { selected -> mode = selected; dark = selected == ThemeMode.DARK || selected == ThemeMode.AMOLED || (selected == ThemeMode.SYSTEM && systemDark); prefs.edit().putString("theme", selected.name).apply() }, dynamicColor, { enabled -> dynamicColor = enabled; prefs.edit().putBoolean("dynamic_color", enabled).apply(); paletteRefresh++ }, puffyButtons, { enabled -> puffyButtons = enabled; prefs.edit().putBoolean("puffy_buttons", enabled).apply() }, recentFilesEnabled, { enabled -> recentFilesEnabled = enabled; prefs.edit().putBoolean("show_recent_files", enabled).apply() }, onWallpaperRefresh = { dynamicColor = true; prefs.edit().putBoolean("dynamic_color", true).apply(); paletteRefresh++ }, onRefresh = { scan() }, onAddFolder = { treeLauncher.launch(null) }, onCheckUpdates = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/vijayarkananduri/Almara/releases"))) } }, fileCount = files.size, appVersion = appVersion)
                 }
@@ -393,7 +404,7 @@ private fun AlmaraApp() {
 private fun timeGreeting(name: String): String {
     val hour = LocalTime.now().hour
     val greeting = when (hour) { in 5..11 -> "Good morning"; in 12..16 -> "Good afternoon"; in 17..20 -> "Good evening"; else -> "Good night" }
-    return if (name.isBlank()) "$greeting. Ready to get things in order?" else "$greeting, ${name.trim()}. Ready to get things in order?"
+    return if (name.isBlank()) greeting else "$greeting, ${name.trim()}"
 }
 
 @Composable private fun HeatmapScale() {
@@ -417,11 +428,11 @@ private fun timeGreeting(name: String): String {
 }
 @Composable private fun ViewChips(views: List<SavedView>, onSelect: (String) -> Unit) { Row(Modifier.fillMaxWidth().padding(bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) { views.take(3).forEach { view -> FilterChip(false, { onSelect(folderQuery(view)) }, label = { Text(view.title, maxLines = 1) }, leadingIcon = { Icon(Icons.Rounded.Folder, null, Modifier.size(16.dp)) }) } } }
 
-@Composable private fun DateBadge(day: LocalDate, month: YearMonth) {
+@Composable private fun DateBadge(day: LocalDate, month: YearMonth, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     val column = (month.atDay(1).dayOfWeek.value - 1 + day.dayOfMonth - 1) % 7
     val alignment = if (column >= 4) Alignment.CenterEnd else Alignment.CenterStart
-    Box(Modifier.fillMaxWidth().padding(vertical = 2.dp).offset(x = if (column >= 4) 18.dp else (-18).dp), contentAlignment = alignment) {
-        Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.primaryContainer, tonalElevation = 4.dp, shadowElevation = 3.dp) {
+    Box(modifier.fillMaxWidth().padding(vertical = 2.dp), contentAlignment = alignment) {
+        Surface(onClick = onClick, modifier = Modifier.padding(horizontal = 8.dp), shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.primaryContainer, tonalElevation = 8.dp, shadowElevation = 8.dp) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(day.dayOfMonth.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 Text(day.format(DateTimeFormatter.ofPattern("MMM")), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -430,7 +441,6 @@ private fun timeGreeting(name: String): String {
         }
     }
 }
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable private fun Heatmap(month: YearMonth, files: List<LocalFile>, selected: LocalDate?, onSelect: (LocalDate) -> Unit) {
     val counts = remember(files, month) { files.filter { YearMonth.from(it.day) == month }.groupingBy { it.day }.eachCount() }
@@ -454,14 +464,14 @@ private fun timeGreeting(name: String): String {
     LaunchedEffect(listState) {
         var previous = 0
         snapshotFlow { listState.firstVisibleItemIndex * 10000 + listState.firstVisibleItemScrollOffset }.collect { position ->
-            if (kotlin.math.abs(position - previous) > 2) onScrollChanged(position > previous)
+            if (kotlin.math.abs(position - previous) > 24) onScrollChanged(position > previous)
             previous = position
         }
     }
     if (error != null) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
     if (shown.isEmpty()) { EmptyMessage(if (files.isEmpty()) "Your almara is empty." else "No matching files.", if (files.isEmpty()) "Allow file access during setup, then refresh the index." else "Try another search or date.") }
     else {
-        if (shown.size > 6) Text("Scroll to see more files", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(bottom = 4.dp))
+        if (shown.size > 6) Text("", modifier = Modifier.height(0.dp))
         LazyColumn(state = listState, modifier = Modifier.fillMaxWidth().fillMaxHeight(if (expanded) 0.72f else 0.90f), contentPadding = PaddingValues(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(shown, key = { it.uri.toString() }) { file -> var menu by remember { mutableStateOf(false) }; var radial by remember { mutableStateOf(false) }
             Card(Modifier.fillMaxWidth().combinedClickable(onClick = { onOpen(file) }, onLongClick = { radial = true }), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
@@ -488,10 +498,10 @@ private fun timeGreeting(name: String): String {
 @Composable private fun SettingsScreen(mode: ThemeMode, onMode: (ThemeMode) -> Unit, dynamicColor: Boolean, onDynamicColor: (Boolean) -> Unit, puffyButtons: Boolean, onPuffyButtons: (Boolean) -> Unit, recentFilesEnabled: Boolean, onRecentFiles: (Boolean) -> Unit, onWallpaperRefresh: () -> Unit, onRefresh: () -> Unit, onAddFolder: () -> Unit, onCheckUpdates: () -> Unit, fileCount: Int, appVersion: String) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { Text("Appearance", style = MaterialTheme.typography.titleLarge); Text("Choose how Almara feels on this phone.", style = MaterialTheme.typography.bodyMedium) }
-        item { Column { ThemeMode.values().forEach { option -> Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { RadioButton(mode == option, { onMode(option) }); Text(when(option) { ThemeMode.SYSTEM -> "System"; ThemeMode.LIGHT -> "Light"; ThemeMode.DARK -> "Dark"; ThemeMode.AMOLED -> "AMOLED · pure black" }, Modifier.weight(1f)); if (mode == option) Text("✓") } } } }
+        item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) { ThemeMode.values().forEach { option -> FilterChip(selected = mode == option, onClick = { onMode(option) }, modifier = Modifier.weight(1f), label = { Text(when(option) { ThemeMode.SYSTEM -> "System"; ThemeMode.LIGHT -> "Light"; ThemeMode.DARK -> "Dark"; ThemeMode.AMOLED -> "AMOLED" }, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }) } } }
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Wallpaper colors", fontWeight = FontWeight.Medium); Text("Use your current Android wallpaper palette.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }; Switch(dynamicColor, onDynamicColor, enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) } }
-        item { OutlinedButton(onClick = onWallpaperRefresh, modifier = Modifier.fillMaxWidth(), enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { Text("Refresh wallpaper accent") } }
-        item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Show recent files", fontWeight = FontWeight.Medium); Text("Show or hide the recent list below the calendar.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }; Switch(recentFilesEnabled, onRecentFiles) } }
+
+        item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Show recent files on Home", fontWeight = FontWeight.Medium); Text("Optional file feed below the calendar.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }; Switch(recentFilesEnabled, onRecentFiles) } }
         item { HorizontalDivider(); Text("Local library", style = MaterialTheme.typography.titleLarge); Text("$fileCount indexed files", style = MaterialTheme.typography.bodyMedium); OutlinedButton(onClick = onAddFolder, modifier = Modifier.fillMaxWidth()) { Text("Add a specific folder") }; Text("All files access scans shared storage automatically. Use this only for a provider folder Android keeps separate.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }
         item { DepthActionButton("Refresh index", onRefresh) }
         item { TextButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) { Text("Check GitHub releases") } }
@@ -537,7 +547,7 @@ private fun timeGreeting(name: String): String {
             OutlinedButton(onClick = { pickDate(customEnd) { customEnd = it } }, modifier = Modifier.fillMaxWidth()) { Text("To · $customEnd") }
         }
         OutlinedTextField(name, { name = it }, label = { Text("Folder name") }, placeholder = { Text(suggestion) }, singleLine = true)
-        TextButton(onClick = { moreOptions = !moreOptions }, modifier = Modifier.fillMaxWidth()) { Text(if (moreOptions) "Fewer options" else "More options") }
+        TextButton(onClick = { moreOptions = !moreOptions }, modifier = Modifier.fillMaxWidth()) { Text("Advanced settings") }
         if (moreOptions) {
             OutlinedTextField(nameContains, { nameContains = it }, label = { Text("Name contains") }, placeholder = { Text("invoice, project, notes…") }, singleLine = true)
             Text("Expiry", fontWeight = FontWeight.SemiBold)
@@ -546,7 +556,7 @@ private fun timeGreeting(name: String): String {
     } }, confirmButton = { DepthActionButton(if (initial == null) "Create folder" else "Save folder", onClick = { runCatching { LocalDate.parse(customStart); LocalDate.parse(customEnd) }.onSuccess { start -> val end = runCatching { LocalDate.parse(customEnd) }.getOrNull(); if (period != "Custom range" || (end != null && !end.isBefore(start))) { val timerMs = when (expiry) { "Keep for a day" -> 24L * 60 * 60 * 1000; "Keep for a week" -> 7L * 24 * 60 * 60 * 1000; else -> 0L }; onCreate(SavedView(initial?.id ?: "", name.ifBlank { suggestion }, sourceValue, kindValue, savedPeriod, if (timerMs > 0) System.currentTimeMillis() + timerMs else 0L, initial?.archived ?: false, initial?.archiveOnExpiry ?: false, nameContains.trim())) } } }) }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 @Composable private fun ChoiceSection(title: String, values: List<String>, selected: Set<String>, expanded: Boolean, onExpand: () -> Unit, choose: (String) -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text(title, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); TextButton(onClick = onExpand) { Text(if (expanded) "Less" else "More or specific") } }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text(title, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f)); TextButton(onClick = onExpand) { Text(if (expanded) "Less" else "More") } }
     FilterChip("All" in selected, { choose("All") }, label = { Text("All") })
     AnimatedVisibility(expanded) { MultiSelectChoices(values.filterNot { it == "All" }, selected, choose) }
 }

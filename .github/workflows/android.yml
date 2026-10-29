@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      publish_direct_apk:
+        description: 'Publish the debug APK as a direct GitHub Release download'
+        required: false
+        default: true
+        type: boolean
   release:
     types: [published]
 
@@ -54,3 +60,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${GITHUB_REF_NAME}" Almara-*-debug.apk Almara-*-unsigned.apk --clobber
+      - name: Create direct debug APK release
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_direct_apk
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="debug-build-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" Almara-*-debug.apk --title "Almara debug APK ${GITHUB_RUN_NUMBER}" --notes "Direct debug APK generated from ${GITHUB_SHA}." --target "$GITHUB_SHA"
