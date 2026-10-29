@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Almara: sedha karo. Private offline file finder for Android</title>
+<meta name="description" content="Almara is a free, open source Android app that finds your files by date, source and type. Offline, no internet permission, files never moved. Almara sedha karo.">
+<meta name="keywords" content="Almara, Android file finder, offline file organizer, virtual folders, file search, open source, privacy, Smart Sedha">
+<meta name="author" content="Vijayarka Nanduri">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#7a2603">
+<link rel="canonical" href="https://vijayarkananduri.github.io/Almara/">
+<link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Almara">
+<meta property="og:title" content="Almara sedha karo. Find any file on your phone.">
+<meta property="og:description" content="Filter your files by date, source and type, then let the folder disappear. Private, offline and open source.">
+<meta property="og:url" content="https://vijayarkananduri.github.io/Almara/">
+<meta property="og:image" content="https://vijayarkananduri.github.io/Almara/assets/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Almara, private offline file finder for Android">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Almara sedha karo."><meta name="twitter:description" content="Private, offline, open source file finder for Android."><meta name="twitter:image" content="https://vijayarkananduri.github.io/Almara/assets/og.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Almara","alternateName":"Smart Sedha","operatingSystem":"Android","applicationCategory":"UtilitiesApplication","description":"Private, offline Android app that finds files by date, source and type using virtual folders. Originals are never moved.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://opensource.org/licenses/MIT","downloadUrl":"https://github.com/vijayarkananduri/Almara/releases","url":"https://vijayarkananduri.github.io/Almara/","author":{"@type":"Person","name":"Vijayarka Nanduri","url":"https://vijayarka.netlify.app/"}}</script>
+<script>try{var t=localStorage.getItem('almara-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Josefin+Sans:wght@400;600;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+html{scroll-behavior:smooth}
+
+/* ---------- NAVIGATION ---------- */
+header nav.top {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 16px 0 !important;
+  position: static !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  flex-wrap: nowrap !important;
+}
+
+header nav.top .mark {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+/* Increased Logo Size & Flattened */
+header nav.top .mark img {
+  width: 120px !important; 
+  height: 120px !important;
+  object-fit: contain;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  margin-left: -10px; /* Offsets any internal image padding */
+}
+
+/* The menu links container */
+header nav.top > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 32px !important; 
+  flex-wrap: nowrap !important;
+}
+
+header nav.top > div a {
+  text-decoration: none;
+  font: 600 1rem 'Josefin Sans', sans-serif;
+  color: #fff;
+  opacity: 0.85;
+  transition: opacity 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+header nav.top > div a:hover {
+  opacity: 1;
+  color: var(--gold, #d9a25b);
+}
+
+/* Hide the old theme toggle if it sneaks in */
+.thb { display: none !important; }
+
+/* Mobile adjustments */
+@media (max-width: 700px) {
+  header nav.top {
+    padding: 8px 0 !important;
+  }
+  header nav.top .mark img {
+    width: 65px !important;
+    height: 65px !important;
+  }
+  header nav.top > div {
+    gap: 20px !important;
+  }
+  header nav.top > div a {
+    font-size: 0.9rem;
+  }
+}
+
+/* ---------- HERO SECTION ---------- */
+.hg{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;padding:18px 0 56px}
+.hero .ic path,.mic .ic path,.b .ic path,.fl path{stroke-dashoffset:0}
+.stage{position:relative}.fl:nth-of-type(1){left:-6%;top:8%}.fl:nth-of-type(2){right:-2%;top:2%;animation-delay:-2s}.fl:nth-of-type(3){left:-2%;bottom:10%;animation-delay:-4s}.fl:nth-of-type(4){right:0;bottom:6%;animation-delay:-1s}
+.phone{width:280px;margin:auto;background:#0f0805;border-radius:38px;padding:9px;box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 2px #3b1708;transform:rotate(3deg);transition:transform .4s;position:relative}.phone:hover{transform:rotate(0)}
+.app{background:#fffaf5;border-radius:30px;height:520px;position:relative;overflow:hidden;color:#1b0a04;padding:16px 13px;font-family:'Josefin Sans',sans-serif}
+.app h4{margin:0;font-size:1.05rem;letter-spacing:.22em}.app small{font:600 1.05rem Caveat;color:#667250;display:block;margin-bottom:6px}.mo{font-weight:700;font-size:1.3rem;margin:4px 2px}
+.calw{display:grid;grid-template-rows:1fr;transition:grid-template-rows .45s cubic-bezier(.3,.8,.3,1),opacity .35s}.calw>div{overflow:hidden}.app.open .calw{grid-template-rows:0fr;opacity:0}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;background:#fff;padding:8px;border-radius:16px}.cal i{font:600 .62rem 'Josefin Sans';text-align:center;color:#667250;font-style:normal}
+.cal button{aspect-ratio:1;border:0;border-radius:8px;font:600 .72rem 'Josefin Sans';cursor:pointer;color:#1b0a04;transition:transform .15s}.cal button:hover{transform:scale(1.15)}.cal button[data-l="3"],.cal button[data-l="4"]{color:#fff}
+.leg{display:flex;gap:4px;margin:8px 2px 2px;font-size:.62rem;color:#667250;align-items:center}.leg b{flex:1;height:6px;border-radius:4px}.hint{font-size:.74rem;color:#667250;margin:8px 2px}
+.badge{position:absolute;top:92px;width:58px;padding:7px 0;border-radius:16px;background:#e8cfc2;text-align:center;font:600 .66rem 'Josefin Sans';line-height:1.2;border:0;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .3s .15s,transform .4s;transform:scale(.4);z-index:2;box-shadow:0 6px 14px rgba(0,0,0,.18)}
+.badge strong{display:block;font-size:1.3rem}.app.open .badge{opacity:1;pointer-events:auto;transform:none}
+.list{position:absolute;left:13px;right:13px;top:92px;bottom:13px;overflow:auto;opacity:0;pointer-events:none;transform:translateY(40px);transition:.45s .1s}.app.open .list{opacity:1;pointer-events:auto;transform:none}
+.f{background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:7px;font-size:.82rem;font-weight:600;box-shadow:0 1px 0 #eadfd6}.f span{display:block;color:#667250;font-size:.68rem;font-weight:400}
+.cup{width:min(300px,100%);margin:auto;display:block;cursor:pointer;overflow:visible}.cup .dl,.cup .dr{transform-box:fill-box;transition:transform 1.5s cubic-bezier(.3,.7,.2,1)}.cup .dl{transform-origin:0 50%}.cup .dr{transform-origin:100% 50%}
+.cup.in .dl,.cup.in .dr{transform:scaleX(.14)}.cup .ch{opacity:0;transform:translateY(10px);transition:.6s}.cup.in .ch{opacity:1;transform:none}
+.q1{font:600 1.6rem Caveat;color:var(--l4);margin-top:12px}
+.cnt{font:700 3.2rem 'Josefin Sans';color:var(--l4);line-height:1}.cnt+small{color:var(--mut)}.grp{margin:12px 0 4px;font:700 .9rem 'Josefin Sans'}.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:6px 12px;font:600 .85rem 'Josefin Sans';cursor:pointer;transition:.15s}.chips button:hover{border-color:var(--l4)}.chips button[aria-pressed=true]{background:var(--l4);border-color:var(--l4);color:#fff}
+.note{font-size:.78rem;color:var(--mut);margin:12px 0 0}
+
+/* ---------- VOICE CARD ---------- */
+.say{background:var(--hero);color:#fff;border-radius:24px;padding:22px 26px;display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;box-shadow:0 18px 40px rgba(0,0,0,.14)}
+.say-body{min-width:0}
+.say-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 3px}
+.say-head h3{margin:0;font:700 1.05rem 'Josefin Sans',sans-serif;letter-spacing:.01em;color:#fff}
+.soon{display:inline-block;background:var(--gold);color:#2a0e04;font:700 .72rem 'Josefin Sans';border-radius:7px;padding:2px 9px;line-height:1.6;white-space:nowrap}
+.mic{width:62px;height:62px;border-radius:50%;border:0;background:var(--gold);color:#2a0e04;cursor:pointer;position:relative;display:grid;place-items:center;flex:none;transition:transform .18s}
+.mic:hover{transform:scale(1.05)}
+.mic .ic{width:28px;height:28px}
+.mic.on:after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--gold);animation:p 1s infinite}
+@keyframes p{to{transform:scale(1.5);opacity:0}}
+.q{font:400 1.02rem/1.45 'Josefin Sans',sans-serif;margin:0;color:#f3ddd1;min-height:0}
+.q.live{color:#fff}
+.res{display:flex;gap:7px;flex-wrap:wrap}
+.res:not(:empty){margin-top:11px}
+.res span{background:#a4512a;border-radius:9px;padding:4px 12px;font:600 .84rem 'Josefin Sans',sans-serif;animation:in .3s both}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+
+/* ---------- FLOATING SCROLL-TO-TOP (Single flat circle, no shadow) ---------- */
+.totop {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 999;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none !important;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  background: #a4512a; 
+  color: #fff;
+  box-shadow: none !important; /* Removed shadow completely */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px) scale(0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.totop.on {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+
+
+.totop:focus-visible {
+  outline: 2px solid var(--gold, #d9a25b);
+  outline-offset: 3px;
+}
+
+@media(max-width:800px){
+  .totop {
+    right: 16px;
+    bottom: 16px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* ---------- GENERAL RESPONSIVE ---------- */
+@media(max-width:800px){
+  .hg{grid-template-columns:1fr}
+  .phone{transform:none}
+  .say{padding:18px;gap:14px;border-radius:20px}
+  .mic{width:56px;height:56px}
+  .mic .ic{width:25px;height:25px}
+  .q{font-size:.95rem}
+  .fl{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .totop{transition:none}
+}
+</style>
+</head>
+<body>
+<header class="hero" id="top"><div class="key"></div>
+<div class="w">
+  <nav class="top">
+    <a class="mark" href="#top" aria-label="Almara Home">
+      <img src="assets/logo.jpg" alt="Almara Logo">
+    </a>
+    <div>
+      <a href="#features">Features</a>
+      <a href="#build">Folders</a>
+      <a href="help.html">Guide</a>
+    </div>
+  </nav>
+  
+<div class="hg"><div>
+<div class="script">Smart Sedha.</div><h1>Almara sedha karo.</h1>
+<p class="lead">Your phone is a messy cupboard. Find any file by when you got it, where it came from, or what it is. Nothing gets moved. Nothing leaves your phone.</p>
+<div class="btns"><a class="b" href="https://github.com/vijayarkananduri/Almara/releases"><span data-i="android"></span>Download for Android</a><a class="b o" href="help.html">How to use it</a></div></div>
+<div class="stage"><span class="fl" data-i="image"></span><span class="fl" data-i="doc"></span><span class="fl" data-i="zip"></span><span class="fl" data-i="folder"></span>
+<div class="phone"><div class="app" id="app"><h4>ALMARA</h4><small>Smart Sedha.</small><div class="mo">October 2026</div>
+<div class="calw"><div><div class="cal" id="cal"></div><div class="leg">Fewer<b style="background:var(--l1)"></b><b style="background:var(--l2)"></b><b style="background:var(--l3)"></b><b style="background:var(--l4)"></b>More</div></div></div>
+<p class="hint" id="hint">Tap a day. Try the 9th or the 28th.</p>
+<button class="badge" id="badge" aria-label="Back to calendar"><strong id="bd">9</strong>Oct<br>2026</button><div class="list" id="list"></div></div></div></div></div></div><div class="key"></div></header>
+
+<main>
+<section class="sec"><div class="w split"><svg class="cup" id="cup" viewBox="0 0 300 340" role="img" aria-label="An almirah whose doors open to show tidy shelves of files"><defs><pattern id="k" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M3 21V3h18v14H8V8h8v5" fill="none" stroke="#000" stroke-width="2.4"/></pattern></defs>
+<rect x="8" y="2" width="284" height="16" rx="6" fill="#2a0e04"/><rect x="20" y="14" width="260" height="312" rx="12" fill="#7a2603"/><rect x="34" y="28" width="232" height="284" rx="8" fill="#2a0e04"/>
+<path d="M34 120h232M34 214h232" stroke="#7a2603" stroke-width="6"/><g id="chs"></g>
+<g class="dl"><rect x="34" y="28" width="116" height="284" rx="8" fill="#a4512a" stroke="#000" stroke-width="2"/><rect x="46" y="42" width="92" height="24" fill="url(#k)" opacity=".45"/><circle cx="136" cy="170" r="6" fill="#d9a25b"/></g>
+<g class="dr"><rect x="150" y="28" width="116" height="284" rx="8" fill="#a4512a" stroke="#000" stroke-width="2"/><rect x="162" y="42" width="92" height="24" fill="url(#k)" opacity=".45"/><circle cx="164" cy="170" r="6" fill="#d9a25b"/></g>
+<path d="M50 326v10M250 326v10" stroke="#2a0e04" stroke-width="8" stroke-linecap="round"/></svg>
+<div><h2>Why Almara?</h2><p style="color:var(--mut)">In many homes, someone says it every few weeks: almara sedha karo. Tidy the cupboard. Almara does that for your phone without taking a single thing out of it.</p><div class="q1">Maa would be proud.</div><p style="color:var(--mut);font-size:.9rem">Tap the cupboard to open or close it.</p></div></div></section>
+
+<section class="sec" id="features" style="padding-top:0"><div class="w"><h2>Everything it does.</h2><p>Each card opens its page in the guide.</p>
+<div class="grid">
+<a class="card rv" href="help.html#home"><span data-i="cal"></span><h3>Heatmap calendar</h3><p>Busy days glow. Tap one to open its files.</p></a>
+<a class="card rv" href="help.html#folders"><span data-i="folder"></span><h3>Virtual folders</h3><p>Combine source, type, date and name. Files never move.</p></a>
+<a class="card rv" href="help.html#timer"><span data-i="timer"></span><h3>Folder timer</h3><p>Let a folder vanish after an hour, a day or a week.</p></a>
+<a class="card rv" href="help.html#search"><span data-i="search"></span><h3>Search</h3><p>Find something without remembering where it went.</p></a>
+<a class="card rv" href="help.html#settings"><span data-i="sliders"></span><h3>Your look</h3><p>System, Light, Dark and AMOLED, plus wallpaper colors.</p></a>
+<a class="card rv" href="help.html#settings"><span data-i="doc"></span><h3>Local library</h3><p>Add a specific folder or refresh the index any time.</p></a>
+<a class="card rv" href="help.html#privacy"><span data-i="shield"></span><h3>Private by design</h3><p>No account, no cloud, no analytics.</p></a>
+<a class="card rv" href="help.html#voice"><span data-i="mic"></span><h3>Voice search</h3><p>Coming soon. Say it, get the filter.</p></a></div></div></section>
+
+<section class="sec" id="build" style="padding-top:0"><div class="w"><h2>Filter like you shop online.</h2>
+<p>Pick a source, a type and a time range, watch the count shrink, then save the rule as a folder. Nothing is copied or moved.</p>
+<div class="split"><div class="card" id="bld"><div class="cnt" id="n">4,915</div><small>matching files</small>
+<div class="grp">Source</div><div class="chips" data-g="s"></div><div class="grp">File type</div><div class="chips" data-g="t"></div><div class="grp">Time range</div><div class="chips" data-g="r"></div><div class="grp">Expires</div><div class="chips" data-g="e"></div>
+<p class="note">Sample numbers for this demo. The app counts your real files.</p></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px"><div class="shot"><img src="assets/builder.jpg" alt="New virtual folder screen"></div><div class="shot" style="margin-top:34px"><img src="assets/timer.jpg" alt="Folder timer dialog"></div></div></div></div></section>
+
+<section class="sec" style="padding-top:0"><div class="w"><h2>Remember when, not where.</h2><p>You got it this week but forgot the name. Open the heatmap, tap the busy days, and the calendar tucks away so your files get the whole screen.</p>
+<div class="rail"><figure><img src="assets/cal.jpg" alt="Month heatmap" loading="lazy"><figcaption>Stronger color, more files that day.</figcaption></figure><figure><img src="assets/day.jpg" alt="Files of one day" loading="lazy"><figcaption>One day, full screen. Tap the badge to return.</figcaption></figure><figure><img src="assets/search.jpg" alt="Search screen" loading="lazy"><figcaption>Search your files by name.</figcaption></figure><figure><img src="assets/settings.jpg" alt="Settings with themes" loading="lazy"><figcaption>System, Light, Dark or AMOLED.</figcaption></figure></div></div></section>
+
+<section class="sec dark" id="verify"><div class="w"><h2>Don’t trust us. Check.</h2>
+<p>Almara has no account, no cloud sync and no analytics. The app declares no internet permission, so it has no way to send your files anywhere. The source is open under the MIT license.</p>
+<div class="pf"><div class="rv"><span data-i="nowifi"></span><h3>No internet</h3><p>No network permission in the app.</p></div><div class="rv"><span data-i="folder"></span><h3>Stays put</h3><p>Originals are never moved, renamed or copied.</p></div><div class="rv"><span data-i="shield"></span><h3>Encrypted index</h3><p>The index and saved views live on your phone.</p></div><div class="rv"><span data-i="code"></span><h3>Open source</h3><p><a href="https://github.com/vijayarkananduri/Almara">Read every line.</a></p></div></div></div></section>
+
+<section class="sec"><div class="w"><div class="say">
+<button class="mic" id="mic" type="button" aria-label="Try a sample voice query"><span data-i="mic"></span></button>
+<div class="say-body">
+<div class="say-head"><h3>Voice search</h3><span class="soon">Coming soon</span></div>
+<p class="q" id="q">Tap the mic and say what you need.</p>
+<div class="res" id="res"></div>
+</div></div></div></section>
+
+<section class="sec" id="get" style="padding-top:0"><div class="w"><h2>Get Almara.</h2>
+<p>Free and open source. Download the latest APK from GitHub Releases. Installing outside the Play Store? Android may ask you to allow it once. The guide shows where.</p>
+<div class="btns"><a class="b" href="https://github.com/vijayarkananduri/Almara/releases"><span data-i="android"></span>Download for Android</a><a class="b o" style="color:var(--ink)" href="help.html">Read the guide</a><a class="b o" style="color:var(--ink)" href="https://github.com/vijayarkananduri/Almara"><span data-i="code"></span>Source code</a></div></div></section>
+</main>
+
+<footer><div class="key"></div><div class="w"><p class="script" style="margin:0">Maa would be proud.</p>
+<p class="ui"><a href="help.html">Guide</a><a href="https://github.com/vijayarkananduri/Almara">Source</a><a href="https://github.com/vijayarkananduri/Almara/releases">Releases</a><a href="https://vijayarka.netlify.app/">Built by Vijayarka</a></p>
+<small>© 2026 Vijayarka Nanduri. Almara is released under the MIT license.</small></div></footer>
+
+<button class="totop" id="totop" type="button" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script src="assets/site.js"></script>
+<script>
+const $=s=>document.querySelector(s),L=[0,1,2,0,2,1,1,2,1,4,1,1,3,3,2,3,0,0,3,3,4,3,4,1,3,2,3,4,4,3,0,0],C=['var(--l0)','var(--l1)','var(--l2)','var(--l3)','var(--l4)'],cal=$('#cal'),app=$('#app');
+'MTWTFSS'.split('').forEach(d=>cal.insertAdjacentHTML('beforeend',`<i>${d}</i>`));for(let i=0;i<3;i++)cal.insertAdjacentHTML('beforeend','<span></span>');
+for(let d=1;d<=31;d++){const b=document.createElement('button'),l=L[d]||0;b.textContent=d;b.dataset.l=l;b.style.background=C[l];b.setAttribute('aria-label','Oct '+d);
+b.onclick=()=>{const col=(3+d-1)%7,n=[2,5,9,16,26][l]+d%3,left=col<=3;$('#bd').textContent=d;$('#badge').style.left=left?'13px':'auto';$('#badge').style.right=left?'auto':'13px';
+$('#list').innerHTML=Array.from({length:n},(_,i)=>`<div class="f">${1270+i*3+d}.jpg<span>Other · Oct ${d} · ${12+(i*7+d)%40} KB</span></div>`).join('');$('#list').style.padding=left?'0 0 0 66px':'0 66px 0 0';$('#list').scrollTop=0;app.classList.add('open')};cal.append(b)}
+$('#badge').onclick=()=>app.classList.remove('open');
+const cup=$('#cup'),ch=$('#chs'),cc=['#a4512a','#c08968','#d5b0a0','#e8d3c9'];let k=0;
+for(let r=0;r<3;r++)for(let c=0;c<5;c++){ch.insertAdjacentHTML('beforeend',`<rect class="ch" x="${46+c*44}" y="${64+r*94}" width="34" height="42" rx="7" fill="${cc[(r*3+c*2)%4]}" style="transition-delay:${(k++)*70+700}ms"/>`)}
+cup.onclick=()=>cup.classList.toggle('in');
+new IntersectionObserver((es,o)=>es.forEach(e=>{if(e.isIntersecting){cup.classList.add('in');o.disconnect()}}),{threshold:.5}).observe(cup);
+const O={s:['All','WhatsApp','Telegram','Camera','Screenshot','Download'],t:['All','Images','Videos','PDFs','Docs'],r:['Today','This week','This month'],e:['Never','1 hour','1 day','1 week']},F={s:[1,.38,.08,.22,.12,.1],t:[1,.55,.08,.04,.06],r:[.004,.03,.12],e:[1,1,1,1]},S={s:0,t:0,r:2,e:0};
+function upd(){let v=4915;for(const k in F)v*=F[k][S[k]];$('#n').textContent=Math.max(1,Math.round(v)).toLocaleString()}
+document.querySelectorAll('.chips').forEach(c=>{const g=c.dataset.g;O[g].forEach((t,i)=>{const b=document.createElement('button');b.textContent=t;b.setAttribute('aria-pressed',S[g]==i);b.onclick=()=>{S[g]=i;c.querySelectorAll('button').forEach((x,j)=>x.setAttribute('aria-pressed',j==i));upd()};c.append(b)})});upd();
+
+/* voice demo */
+const V=[['Images from today',['Images','Today']],['WhatsApp PDFs from last week',['WhatsApp','PDFs','Last week']],['Everything from Aug 15 till today',['Aug 15 to today','All files']]];let vi=0,tm;
+const qEl=$('#q'),rEl=$('#res'),micEl=$('#mic');
+micEl.onclick=()=>{const [s,c]=V[vi++%V.length];clearInterval(tm);rEl.innerHTML='';qEl.textContent='';qEl.classList.add('live');micEl.classList.add('on');let i=0;
+tm=setInterval(()=>{qEl.textContent=s.slice(0,++i);if(i>=s.length){clearInterval(tm);micEl.classList.remove('on');c.forEach(x=>rEl.insertAdjacentHTML('beforeend',`<span>${x}</span>`));rEl.insertAdjacentHTML('beforeend','<span>Show results</span><span>Make folder</span>')}},45)};
+
+/* scroll to top */
+const totop=$('#totop');
+const onScroll=()=>totop.classList.toggle('on',window.scrollY>420);
+addEventListener('scroll',onScroll,{passive:true});onScroll();
+totop.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+
+/* Forcefully ensure site.js doesn't break the nav */
+(function(){
+  const clean = () => {
+    document.querySelectorAll('body nav, body .navbar, body [class*="floating-nav"]').forEach(n => {
+      if (!n.closest('header')) n.remove();
+    });
+  };
+  clean();
+  addEventListener('scroll', clean, {passive:true});
+  new MutationObserver(clean).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+</body>
+</html>
