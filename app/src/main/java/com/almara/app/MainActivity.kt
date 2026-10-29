@@ -29,6 +29,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -43,7 +44,7 @@ import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Image as ImageFile
 import androidx.compose.material.icons.rounded.Slideshow
 import androidx.compose.material.icons.rounded.TableChart
 import androidx.compose.material.icons.rounded.VideoFile
@@ -696,7 +697,7 @@ private fun folderQuery(v: SavedView): String {
 private fun periodLabel(value: String): String = if (value.startsWith("Custom:")) "Custom · ${value.removePrefix("Custom:").replace("..", " – ")}" else value
 private fun openFile(context: android.content.Context, file: LocalFile) { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(file.uri, file.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) } }
 private fun shareFile(context: android.content.Context, file: LocalFile) { runCatching { context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType(file.mime).putExtra(Intent.EXTRA_STREAM, file.uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Share file")) } }
-private fun fileIcon(mime: String): ImageVector = when { mime.startsWith("image/") -> Icons.Rounded.Image; mime == "application/pdf" -> Icons.Rounded.Description; mime.startsWith("audio/") -> Icons.Rounded.AudioFile; mime.startsWith("video/") -> Icons.Rounded.VideoFile; mime.contains("spreadsheet") || mime == "text/csv" -> Icons.Rounded.TableChart; mime.contains("presentation") -> Icons.Rounded.Slideshow; mime.contains("zip") || mime.contains("archive") -> Icons.Rounded.Archive; else -> Icons.Rounded.Description }
+private fun fileIcon(mime: String): ImageVector = when { mime.startsWith("image/") -> ImageFile; mime == "application/pdf" -> Icons.Rounded.Description; mime.startsWith("audio/") -> Icons.Rounded.AudioFile; mime.startsWith("video/") -> Icons.Rounded.VideoFile; mime.contains("spreadsheet") || mime == "text/csv" -> Icons.Rounded.TableChart; mime.contains("presentation") -> Icons.Rounded.Slideshow; mime.contains("zip") || mime.contains("archive") -> Icons.Rounded.Archive; else -> Icons.Rounded.Description }
 private fun formatBytes(bytes: Long) = when { bytes >= 1_000_000 -> String.format(Locale.getDefault(), "%.1f MB", bytes / 1_000_000.0); bytes >= 1_000 -> "${bytes / 1_000} KB"; else -> "$bytes B" }
 private fun displaySource(value: String): String = value.split(',').map { when (it.trim().lowercase(Locale.ROOT)) { "whatsapp" -> "WhatsApp"; "telegram" -> "Telegram"; "camera" -> "Camera"; "download" -> "Download"; "screenshot" -> "Screenshot"; "other" -> "Other"; else -> it.trim().replaceFirstChar { ch -> ch.uppercase() } } }.distinct().joinToString(",")
 private fun displayTypes(value: String): String {
