@@ -6,9 +6,11 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
+import androidx.core.content.FileProvider
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -50,7 +52,8 @@ class IndexWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
 
 private fun hasAnyGrantedSource(context: Context): Boolean {
     val permissions = if (Build.VERSION.SDK_INT >= 34) listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) else if (Build.VERSION.SDK_INT >= 33) listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO) else listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-    return permissions.any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED } ||
+    return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) ||
+        permissions.any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED } ||
         context.getSharedPreferences("almara", Context.MODE_PRIVATE).getStringSet("trees", emptySet()).orEmpty().isNotEmpty()
 }
 
@@ -73,6 +76,10 @@ object IndexingScheduler {
 private fun scanGrantedFiles(context: Context): List<UriMetadataEntity> {
     val now = System.currentTimeMillis()
     val rows = LinkedHashMap<String, UriMetadataEntity>()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
+        scanAllSharedStorage(context, now, rows)
+        return rows.values.toList()
+    }
     val permissions = if (Build.VERSION.SDK_INT >= 34) listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) else if (Build.VERSION.SDK_INT >= 33) listOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_MEDIA_AUDIO) else listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
     if (permissions.any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }) {
         val collection = MediaStore.Files.getContentUri("external")
@@ -98,6 +105,29 @@ private fun scanGrantedFiles(context: Context): List<UriMetadataEntity> {
     val trees = context.getSharedPreferences("almara", Context.MODE_PRIVATE).getStringSet("trees", emptySet()).orEmpty()
     trees.forEach { raw -> runCatching { walkTree(context, Uri.parse(raw), now, rows) } }
     return rows.values.toList()
+}
+
+private fun scanAllSharedStorage(context: Context, now: Long, rows: MutableMap<String, UriMetadataEntity>) {
+    val root = Environment.getExternalStorageDirectory()
+    root.walkTopDown()
+        .onEnter { dir -> dir.name != "Android" || dir.resolve("data").exists().not() }
+        .forEach { file ->
+            if (!file.isFile || !file.canRead()) return@forEach
+            if (!isIndexable(file.name, null)) return@forEach
+            val uri = runCatching { FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file) }.getOrNull() ?: return@forEach
+            val modified = file.lastModified().takeIf { it > 0 } ?: now
+            val relative = runCatching { file.relativeTo(root).invariantSeparatorsPath }.getOrDefault(file.name)
+            rows[uri.toString()] = UriMetadataEntity(uri.toString(), file.name, mimeForExtension(file.name), file.length(), modified, dateFromFilenameOrModified(file.name, modified, ZoneOffset.UTC).toString(), detectSource(relative).name.lowercase(), now)
+        }
+}
+
+private fun mimeForExtension(name: String): String = when (name.substringAfterLast('.', "").lowercase()) {
+    "pdf" -> "application/pdf"; "doc" -> "application/msword"; "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    "xls" -> "application/vnd.ms-excel"; "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; "csv" -> "text/csv"
+    "ppt" -> "application/vnd.ms-powerpoint"; "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    "jpg", "jpeg" -> "image/jpeg"; "png" -> "image/png"; "webp" -> "image/webp"; "gif" -> "image/gif"
+    "mp4" -> "video/mp4"; "mp3" -> "audio/mpeg"; "wav" -> "audio/wav"; "zip" -> "application/zip"
+    else -> "application/octet-stream"
 }
 
 private fun walkTree(context: Context, tree: Uri, now: Long, rows: MutableMap<String, UriMetadataEntity>) {
