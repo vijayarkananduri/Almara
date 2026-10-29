@@ -92,7 +92,7 @@ Free and open source.
 2. Installing outside the Play Store? Android may ask you to allow it once. The [guide](https://vijayarkananduri.github.io/Almara/help.html) shows where.
 3. Open Almara and pick the folders you want it to index.
 
-> Existing CI APKs are unsigned. Follow the [Chromebook Linux signing and v1 release guide](docs/CHROMEBOOK-LINUX-RELEASE.md) before distributing a signed APK.
+> 
 
 ## Build from source
 
@@ -102,11 +102,10 @@ cd Almara
 ./gradlew :app:assembleDebug
 ```
 
-The debug APK lands in `app/build/outputs/apk/debug/`. You need JDK 17+ and Android SDK platform 35/build-tools 35.0.0. A Chromebook CLI setup and APK signing walkthrough is in [docs/CHROMEBOOK-LINUX-RELEASE.md](docs/CHROMEBOOK-LINUX-RELEASE.md).
 
 ## Built with
 
-Kotlin, Jetpack Compose, WorkManager for indexing and expiry, encrypted local metadata, and GitHub Actions, which runs unit tests and builds debug and unsigned release APKs on every push to `main`. Use the Chromebook guide to sign the release APK with your permanent private key.
+Kotlin, Jetpack Compose, WorkManager for indexing and expiry, encrypted local metadata.
 
 ## Contribute
 
