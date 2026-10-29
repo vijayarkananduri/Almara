@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   build:
-    name: Test and build unsigned v1 APKs
+    name: Build unsigned Almara V1 APKs
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -43,13 +43,13 @@ jobs:
       - name: Assemble unsigned release APK
         run: gradle --no-daemon :app:assembleRelease
       - name: Rename APKs
-        run: cp app/build/outputs/apk/debug/app-debug.apk Almara-${GITHUB_REF_NAME//\//-}-debug.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk Almara-V1-debug.apk
       - name: Rename unsigned release APK
-        run: cp app/build/outputs/apk/release/app-release-unsigned.apk Almara-${GITHUB_REF_NAME//\//-}-unsigned.apk
+        run: cp app/build/outputs/apk/release/app-release-unsigned.apk Almara-V1-unsigned.apk
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Almara-unsigned-v1-apks
+          name: Almara-V1-apks
           path: |
             Almara-*-debug.apk
             Almara-*-unsigned.apk
@@ -65,5 +65,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="debug-build-${GITHUB_RUN_NUMBER}"
-          gh release create "$TAG" Almara-*-debug.apk --title "Almara debug APK ${GITHUB_RUN_NUMBER}" --notes "Direct debug APK generated from ${GITHUB_SHA}." --target "$GITHUB_SHA"
+          TAG="almara-v1-build-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" Almara-V1-unsigned.apk Almara-V1-debug.apk --title "Almara V1 APK ${GITHUB_RUN_NUMBER}" --notes "Unsigned Almara V1 build generated from ${GITHUB_SHA}." --target "$GITHUB_SHA"

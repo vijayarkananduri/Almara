@@ -124,6 +124,9 @@ object ExpiryNotifications {
         return false
     }
 
+    fun dismiss(context: Context, folderId: String) {
+        NotificationManagerCompat.from(context).cancel(folderId.hashCode())
+    }
     /** Posts Keep/Let expire actions as broadcasts to the host-supplied receiver component. */
     fun post(
         context: Context,

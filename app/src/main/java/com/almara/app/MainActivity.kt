@@ -67,11 +67,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
@@ -106,6 +112,7 @@ private data class LocalFile(val uri: Uri, val name: String, val mime: String, v
 private data class SavedView(val id: String, val title: String, val source: String, val kind: String, val period: String, val expiresAt: Long = 0L, val archived: Boolean = false, val archiveOnExpiry: Boolean = false, val nameContains: String = "")
 private enum class AlmaraTab { HOME, SEARCH, FOLDERS, SETTINGS }
 private enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
+private val AlmaraDisplayFont = FontFamily(Font(R.font.caveat))
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,7 +130,7 @@ private fun AlmaraApp() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { context.getSharedPreferences("almara", 0) }
-    val appVersion = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0" }.getOrDefault("1.0.0") }
+    val appVersion = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "V1" }.getOrDefault("V1") }
     val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
     var mode by remember { mutableStateOf(runCatching { ThemeMode.valueOf(prefs.getString("theme", "SYSTEM")!!) }.getOrDefault(ThemeMode.SYSTEM)) }
     var dark by remember { mutableStateOf(mode == ThemeMode.DARK || mode == ThemeMode.AMOLED || (mode == ThemeMode.SYSTEM && systemDark)) }
@@ -197,13 +204,13 @@ private fun AlmaraApp() {
         if (startupSetupStage == 1) startupSetupStage = 2
     }
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        pendingExpiry?.let { (id, duration) -> if (granted) persistViews(views.map { if (it.id == id) it.copy(expiresAt = System.currentTimeMillis() + duration, archived = false) else it }) else status = "Expiry reminder permission is off." }
+        pendingExpiry?.let { (id, duration) -> if (granted) { persistViews(views.map { if (it.id == id) it.copy(expiresAt = System.currentTimeMillis() + duration, archived = false) else it }); com.almara.app.data.FolderExpiryWorker.runNow(context) } else status = "Expiry reminder permission is off." }
         pendingExpiry = null
         if (startupSetupStage == 2) startupSetupStage = 3
     }
     fun setExpiry(id: String, duration: Long) {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) { pendingExpiry = id to duration; notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
-        else persistViews(views.map { if (it.id == id) it.copy(expiresAt = System.currentTimeMillis() + duration, archived = false) else it })
+        else { persistViews(views.map { if (it.id == id) it.copy(expiresAt = System.currentTimeMillis() + duration, archived = false) else it }); com.almara.app.data.FolderExpiryWorker.runNow(context) }
     }
     val saveConversionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { destination ->
         val source = pendingConversionFile; pendingConversionFile = null
@@ -294,7 +301,9 @@ private fun AlmaraApp() {
         }, floatingActionButton = { if (tab == AlmaraTab.HOME || tab == AlmaraTab.FOLDERS) FloatingActionButton(onClick = { showCreate = true }) { Icon(Icons.Rounded.Add, "Create virtual folder") } }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 18.dp)) {
                 Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) { Text("Almara", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold); Text("Smart Sedha.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary) }
+                    Image(painterResource(R.drawable.almara_icon_image), "Almara logo", Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop)
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) { Text("Almara", fontFamily = AlmaraDisplayFont, fontSize = 30.sp, fontWeight = FontWeight.SemiBold, lineHeight = 30.sp); Text("Smart Sedha.", fontFamily = AlmaraDisplayFont, fontSize = 17.sp, color = MaterialTheme.colorScheme.secondary) }
                     if (indexing) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
                 }
                 when (tab) {
@@ -361,7 +370,7 @@ private fun AlmaraApp() {
                         } }
                         if (views.isNotEmpty()) Text("Tap the three dots for folder actions. Original files are always preserved.", style = MaterialTheme.typography.bodySmall)
                     }
-                    AlmaraTab.SETTINGS -> SettingsScreen(mode, { selected -> mode = selected; dark = selected == ThemeMode.DARK || selected == ThemeMode.AMOLED || (selected == ThemeMode.SYSTEM && systemDark); prefs.edit().putString("theme", selected.name).apply() }, dynamicColor, { enabled -> dynamicColor = enabled; prefs.edit().putBoolean("dynamic_color", enabled).apply(); paletteRefresh++ }, puffyButtons, { enabled -> puffyButtons = enabled; prefs.edit().putBoolean("puffy_buttons", enabled).apply() }, recentFilesEnabled, { enabled -> recentFilesEnabled = enabled; prefs.edit().putBoolean("show_recent_files", enabled).apply() }, onWallpaperRefresh = { dynamicColor = true; prefs.edit().putBoolean("dynamic_color", true).apply(); paletteRefresh++ }, onRefresh = { scan() }, onAddFolder = { treeLauncher.launch(null) }, onCheckUpdates = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/vijayarkananduri/Almara/releases"))) } }, fileCount = files.size, appVersion = appVersion)
+                    AlmaraTab.SETTINGS -> SettingsScreen(mode, { selected -> mode = selected; dark = selected == ThemeMode.DARK || selected == ThemeMode.AMOLED || (selected == ThemeMode.SYSTEM && systemDark); prefs.edit().putString("theme", selected.name).apply() }, dynamicColor, { enabled -> dynamicColor = enabled; prefs.edit().putBoolean("dynamic_color", enabled).apply(); paletteRefresh++ }, puffyButtons, { enabled -> puffyButtons = enabled; prefs.edit().putBoolean("puffy_buttons", enabled).apply() }, recentFilesEnabled, { enabled -> recentFilesEnabled = enabled; prefs.edit().putBoolean("show_recent_files", enabled).apply() }, onWallpaperRefresh = { dynamicColor = true; prefs.edit().putBoolean("dynamic_color", true).apply(); paletteRefresh++ }, onRefresh = { scan() }, onAddFolder = { treeLauncher.launch(null) }, onCheckUpdates = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/vijayarkananduri/Almara/releases"))) } }, onOpenHelp = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://vijayarkananduri.github.io/Almara/"))) } }, fileCount = files.size, appVersion = appVersion)
                 }
             }
         }
@@ -495,16 +504,16 @@ private fun timeGreeting(name: String): String {
 
 @Composable private fun EmptyMessage(title: String, detail: String) { Column(Modifier.fillMaxWidth().padding(26.dp), horizontalAlignment = Alignment.CenterHorizontally) { Text(title, style = MaterialTheme.typography.titleMedium); Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary) } }
 
-@Composable private fun SettingsScreen(mode: ThemeMode, onMode: (ThemeMode) -> Unit, dynamicColor: Boolean, onDynamicColor: (Boolean) -> Unit, puffyButtons: Boolean, onPuffyButtons: (Boolean) -> Unit, recentFilesEnabled: Boolean, onRecentFiles: (Boolean) -> Unit, onWallpaperRefresh: () -> Unit, onRefresh: () -> Unit, onAddFolder: () -> Unit, onCheckUpdates: () -> Unit, fileCount: Int, appVersion: String) {
+@Composable private fun SettingsScreen(mode: ThemeMode, onMode: (ThemeMode) -> Unit, dynamicColor: Boolean, onDynamicColor: (Boolean) -> Unit, puffyButtons: Boolean, onPuffyButtons: (Boolean) -> Unit, recentFilesEnabled: Boolean, onRecentFiles: (Boolean) -> Unit, onWallpaperRefresh: () -> Unit, onRefresh: () -> Unit, onAddFolder: () -> Unit, onCheckUpdates: () -> Unit, onOpenHelp: () -> Unit, fileCount: Int, appVersion: String) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { Text("Appearance", style = MaterialTheme.typography.titleLarge); Text("Choose how Almara feels on this phone.", style = MaterialTheme.typography.bodyMedium) }
-        item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) { ThemeMode.values().forEach { option -> FilterChip(selected = mode == option, onClick = { onMode(option) }, modifier = Modifier.weight(1f), label = { Text(when(option) { ThemeMode.SYSTEM -> "System"; ThemeMode.LIGHT -> "Light"; ThemeMode.DARK -> "Dark"; ThemeMode.AMOLED -> "AMOLED" }, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }) } } }
+        item { Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { ThemeMode.values().forEach { option -> FilterChip(selected = mode == option, onClick = { onMode(option) }, modifier = Modifier.width(82.dp), label = { Text(when(option) { ThemeMode.SYSTEM -> "System"; ThemeMode.LIGHT -> "Light"; ThemeMode.DARK -> "Dark"; ThemeMode.AMOLED -> "AMOLED" }, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }) } } }
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Wallpaper colors", fontWeight = FontWeight.Medium); Text("Use your current Android wallpaper palette.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }; Switch(dynamicColor, onDynamicColor, enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) } }
 
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("Show recent files on Home", fontWeight = FontWeight.Medium); Text("Optional file feed below the calendar.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }; Switch(recentFilesEnabled, onRecentFiles) } }
         item { HorizontalDivider(); Text("Local library", style = MaterialTheme.typography.titleLarge); Text("$fileCount indexed files", style = MaterialTheme.typography.bodyMedium); OutlinedButton(onClick = onAddFolder, modifier = Modifier.fillMaxWidth()) { Text("Add a specific folder") }; Text("All files access scans shared storage automatically. Use this only for a provider folder Android keeps separate.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }
         item { DepthActionButton("Refresh index", onRefresh) }
-        item { TextButton(onClick = onCheckUpdates, modifier = Modifier.fillMaxWidth()) { Text("Check GitHub releases") } }
+        item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { OutlinedButton(onClick = onOpenHelp, modifier = Modifier.weight(1f)) { Text("Help") }; TextButton(onClick = onCheckUpdates, modifier = Modifier.weight(1f)) { Text("Releases") } } }
         item { Text("File and notification access are requested during first setup. Almara reads only files you allow and never changes originals.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary) }
         item { HorizontalDivider(); Text("Almara v$appVersion · Vijayarka Nanduri", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center) }
     }

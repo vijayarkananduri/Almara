@@ -60,6 +60,10 @@ class FolderExpiryWorker(context: Context, params: WorkerParameters) : Coroutine
             val request = PeriodicWorkRequestBuilder<FolderExpiryWorker>(15, TimeUnit.MINUTES).build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(PERIODIC_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
         }
+        fun runNow(context: Context) {
+            val request = OneTimeWorkRequestBuilder<FolderExpiryWorker>().build()
+            WorkManager.getInstance(context).enqueueUniqueWork("almara-folder-expiry-now", ExistingWorkPolicy.REPLACE, request)
+        }
         fun applyAction(context: Context, folderId: String, action: ExpiryAction) {
             val data = workDataOf("folder_id" to folderId, "action" to action.name)
             val request = OneTimeWorkRequestBuilder<ExpiryActionWorker>().setInputData(data).build()
@@ -81,6 +85,7 @@ class ExpiryActionWorker(context: Context, params: WorkerParameters) : Coroutine
                     ExpiryAction.KEEP -> db.folderDao().upsert(folder.copy(expiresAtMillis = null, archiveOnExpiry = false, noticeSentAtMillis = null, updatedAtMillis = System.currentTimeMillis()))
                     ExpiryAction.LET_EXPIRE -> db.folderDao().upsert(folder.copy(expiresAtMillis = System.currentTimeMillis(), noticeSentAtMillis = null))
                 }
+                ExpiryNotifications.dismiss(applicationContext, folder.id)
             } finally { db.close() }
             Result.success()
         } catch (_: Exception) { Result.retry() }
