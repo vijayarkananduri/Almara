@@ -1,22 +1,24 @@
-&lt;div align="center"&gt;
+<div align="center">
+
+<img src="assets/logo.jpg" alt="Almara logo" width="96" />
 
 # Almara
 
 **A private, offline-first Android file organiser — a calendar view for your files, without moving a single one.**
 
-&lt;img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License" /&gt;
-&lt;img src="https://img.shields.io/badge/Platform-Android-3DDC84.svg?logo=android&logoColor=white" alt="Android" /&gt;
-&lt;img src="https://img.shields.io/badge/Language-Kotlin-7F52FF.svg?logo=kotlin&logoColor=white" alt="Kotlin" /&gt;
-&lt;img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4.svg" alt="Jetpack Compose" /&gt;
-&lt;img src="https://img.shields.io/badge/Architecture-MVVM-blue.svg" alt="MVVM" /&gt;
-&lt;img src="https://img.shields.io/badge/Open%20Source-Yes-brightgreen.svg" alt="Open Source" /&gt;
-&lt;img src="https://img.shields.io/badge/Internet%20Permission-None-red.svg" alt="No Internet Permission" /&gt;
+<img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License" />
+<img src="https://img.shields.io/badge/Platform-Android-3DDC84.svg?logo=android&logoColor=white" alt="Android" />
+<img src="https://img.shields.io/badge/Language-Kotlin-7F52FF.svg?logo=kotlin&logoColor=white" alt="Kotlin" />
+<img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4.svg" alt="Jetpack Compose" />
+<img src="https://img.shields.io/badge/Architecture-MVVM-blue.svg" alt="MVVM" />
+<img src="https://img.shields.io/badge/Open%20Source-Yes-brightgreen.svg" alt="Open Source" />
+<img src="https://img.shields.io/badge/Internet%20Permission-None-red.svg" alt="No Internet Permission" />
 
 *A calmer way to find what matters in your digital cupboard.*
 
-&lt;a href="https://vijayarkananduri.github.io/Almara/"&gt;Landing Page&lt;/a&gt; · &lt;a href="#download"&gt;Download APK&lt;/a&gt; · &lt;a href="../../issues"&gt;Report an Issue&lt;/a&gt; · &lt;a href="../../issues/new"&gt;Request a Feature&lt;/a&gt;
+<a href="https://vijayarkananduri.github.io/Almara/">Landing Page</a> · <a href="#download">Download APK</a> · <a href="../../issues">Report an Issue</a> · <a href="../../issues/new">Request a Feature</a>
 
-&lt;/div&gt;
+</div>
 
 ---
 
@@ -32,7 +34,7 @@ This repository contains the Kotlin + Jetpack Compose Android app, local encrypt
 
 Most file managers show you a wall of folders. Almara shows you **when** — a month heatmap of your files, so you can find last month's invoice, last year's photo, or that PDF you downloaded "sometime in March" without digging.
 
-&gt; No account. No cloud. No analytics. No internet permission. Your files stay exactly where they are.
+> No account. No cloud. No analytics. No internet permission. Your files stay exactly where they are.
 
 ## Features
 
@@ -48,32 +50,33 @@ Most file managers show you a wall of folders. Almara shows you **when** — a m
 
 ## Screenshots
 
-&lt;div align="center"&gt;
+**Home — your files at a glance**
 
-&lt;table&gt;
-&lt;tr&gt;
-&lt;td align="center"&gt;&lt;b&gt;Home&lt;/b&gt;&lt;/td&gt;
-&lt;td align="center"&gt;&lt;b&gt;Calendar View&lt;/b&gt;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;img src="assets/builder.jpg" alt="Home" width="220" /&gt;&lt;/td&gt;
-&lt;td&gt;&lt;img src="assets/cal.jpg" alt="Calendar view" width="220" /&gt;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td align="center"&gt;&lt;b&gt;Search&lt;/b&gt;&lt;/td&gt;
-&lt;td align="center"&gt;&lt;b&gt;Settings&lt;/b&gt;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;img src="assets/search.jpg" alt="Search" width="220" /&gt;&lt;/td&gt;
-&lt;td&gt;&lt;img src="assets/settings.jpg" alt="Settings" width="220" /&gt;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/table&gt;
+<img src="assets/builder.jpg" alt="Almara home screen" width="260" />
 
-&lt;/div&gt;
+**Month Heatmap — files as a calendar**
+
+<img src="assets/cal.jpg" alt="Almara month heatmap calendar view" width="260" />
+
+**Day View — everything from a single day**
+
+<img src="assets/day.jpg" alt="Almara day view" width="260" />
+
+**Search — fast, fully on-device**
+
+<img src="assets/search.jpg" alt="Almara local search" width="260" />
+
+**Expiry Reminders — optional timers for temporary files**
+
+<img src="assets/timer.jpg" alt="Almara expiry reminder" width="260" />
+
+**Settings — private, local, yours**
+
+<img src="assets/settings.jpg" alt="Almara settings" width="260" />
 
 ## Download
 
-Grab the latest unsigned V1 release APK or the debug APK from the &lt;a href="../../actions"&gt;Actions&lt;/a&gt; workflow artifacts on the `main` branch.
+Grab the latest unsigned V1 release APK or the debug APK from the <a href="../../actions">Actions</a> workflow artifacts on the `main` branch.
 
 Requires Android **8.0 (API 26)+** — adjust to your actual `minSdk`.
 
@@ -94,14 +97,14 @@ Almara/
 │   ├── data/               # Room DB + encrypted metadata
 │   └── workers/            # WorkManager indexing / expiry jobs
 ├── assets/                 # Landing page & README images
+│   ├── logo.jpg            # App logo
 │   ├── builder.jpg         # Home screen
 │   ├── cal.jpg             # Month heatmap / calendar view
 │   ├── day.jpg             # Day view
 │   ├── search.jpg          # Local search
-│   ├── settings.jpg        # Settings
-│   ├── logo.jpg            # App logo
-│   ├── og.png / og.svg     # Social preview image
 │   ├── timer.jpg           # Expiry reminder / timer
+│   ├── settings.jpg        # Settings
+│   ├── og.png / og.svg     # Social preview image
 │   ├── site.js             # Landing page scripts
 │   └── style.css           # Landing page styles
 └── .github/workflows/      # CI — builds release + debug APK
@@ -170,10 +173,10 @@ SOFTWARE.
 
 ---
 
-&lt;div align="center"&gt;
+<div align="center">
 
 Made with zero internet permissions.
 
 Star this repo if Almara brought some calm to your digital cupboard.
 
-&lt;/div&gt;
+</div>
