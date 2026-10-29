@@ -123,5 +123,5 @@ private fun walkTree(context: Context, tree: Uri, now: Long, rows: MutableMap<St
 private fun isIndexable(name: String, mime: String?): Boolean {
     val ext = name.substringAfterLast('.', "").lowercase()
     return mime?.let { it.startsWith("image/") || it.startsWith("audio/") || it.startsWith("video/") } == true ||
-        ext in setOf("pdf", "doc", "docx", "odt", "rtf", "txt", "md", "zip", "tar", "gz", "rar", "7z", "jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "heif", "mp3", "opus", "ogg", "wav", "m4a", "aac", "flac", "mp4", "mkv", "webm", "mov", "avi")
+        ext in setOf("pdf", "doc", "docx", "odt", "rtf", "txt", "md", "xls", "xlsx", "csv", "ods", "ppt", "pptx", "odp", "zip", "tar", "gz", "rar", "7z", "jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "heif", "mp3", "opus", "ogg", "wav", "m4a", "aac", "flac", "mp4", "mkv", "webm", "mov", "avi")
 }

@@ -76,7 +76,7 @@ import java.util.Locale
 private data class LocalFile(val uri: Uri, val name: String, val mime: String, val bytes: Long, val modified: Long, val source: String, val contentDay: LocalDate? = null) {
     val day: LocalDate get() = contentDay ?: Instant.ofEpochMilli(modified).atZone(ZoneId.systemDefault()).toLocalDate()
 }
-private data class SavedView(val id: String, val title: String, val source: String, val kind: String, val period: String, val expiresAt: Long = 0L, val archived: Boolean = false, val archiveOnExpiry: Boolean = false)
+private data class SavedView(val id: String, val title: String, val source: String, val kind: String, val period: String, val expiresAt: Long = 0L, val archived: Boolean = false, val archiveOnExpiry: Boolean = false, val nameContains: String = "")
 private enum class AlmaraTab { HOME, SEARCH, FOLDERS, SETTINGS }
 private enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
 
@@ -263,13 +263,13 @@ private fun AlmaraApp() {
                         Heatmap(month, files, selectedDay, onSelect = { selectedDay = if (selectedDay == it) null else it })
                         HeatmapScale()
                         if (views.isNotEmpty()) ViewChips(views, onSelect = { query = it; tab = AlmaraTab.SEARCH })
-                        Text(if (selectedDay != null) "${selectedDay!!.format(DateTimeFormatter.ofPattern("MMM d"))} · files" else "Your files", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(if (selectedDay != null) "${selectedDay!!.format(DateTimeFormatter.ofPattern("MMM d"))} · ${files.count { it.day == selectedDay }} files" else "Your files", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(vertical = 4.dp))
                         if (recentFilesEnabled) FileList(files, query, selectedDay, onOpen = { openFile(context, it) }, onShare = { shareFile(context, it) }, onDeleteReference = { file -> files = files.filterNot { it.uri == file.uri }; status = "Removed from this view. The original file is untouched." })
                     }
                     AlmaraTab.SEARCH -> {
                         Text("Find something without remembering where it went.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 10.dp))
-                        SearchBar(query, { query = it }, {})
+                        SearchBar(query, { query = it }, { tab = AlmaraTab.SEARCH })
                         FileList(files, query, null, onOpen = { openFile(context, it) }, onShare = { shareFile(context, it) }, onDeleteReference = { file -> files = files.filterNot { it.uri == file.uri } })
                     }
                     AlmaraTab.FOLDERS -> {
@@ -281,7 +281,7 @@ private fun AlmaraApp() {
                                     Text("${folder.source} · ${folder.kind} · ${periodLabel(folder.period)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                                     val count = remember(files, folder) { runCatching { filterFiles(files, folderQuery(folder), null).size }.getOrDefault(0) }
                                     Text("$count matching files", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                                    Row { TextButton(onClick = { selectedFolderId = folder.id; query = folderQuery(folder); tab = AlmaraTab.SEARCH }) { Text("Open") }; TextButton(onClick = { editingFolder = folder }) { Text("Edit") }; TextButton(onClick = { timerFolder = folder }) { Text("Timer") }; TextButton(onClick = { persistViews(views.filterNot { it.id == folder.id }); selectedFolderId = null }) { Text("Delete") } }
+                                    Row { TextButton(onClick = { selectedFolderId = folder.id; query = folderQuery(folder); tab = AlmaraTab.SEARCH }) { Text("Open") }; TextButton(onClick = { editingFolder = folder }) { Text("Edit") }; TextButton(onClick = { timerFolder = folder }) { Text("Timer") }; TextButton(onClick = { persistViews(views.filterNot { it.id == folder.id }); selectedFolderId = null }) { Text("Remove folder") } }
                                     Row(verticalAlignment = Alignment.CenterVertically) { Text("Archive for 7 days", Modifier.weight(1f), style = MaterialTheme.typography.bodySmall); Switch(folder.archiveOnExpiry, { enabled -> persistViews(views.map { if (it.id == folder.id) it.copy(archiveOnExpiry = enabled) else it }) }) }
                                 }
                             }
@@ -422,7 +422,7 @@ private fun timeGreeting(name: String): String {
     val typeOptions = listOf("All", "Images", "Videos", "Audio", "PDFs", "Docs", "Archives", "Other")
     var sources by remember(initial) { mutableStateOf(initial?.source?.split(",")?.filter(String::isNotBlank)?.toSet()?.takeIf { it.isNotEmpty() } ?: setOf("All")) }
     var kinds by remember(initial) { mutableStateOf(initial?.kind?.split(",")?.filter(String::isNotBlank)?.toSet()?.takeIf { it.isNotEmpty() } ?: setOf("All")) }
-    var period by remember(initial) { mutableStateOf(if (initial?.period?.startsWith("Custom:") == true) "Custom range" else initial?.period ?: "This month") }; var name by remember(initial) { mutableStateOf(initial?.title ?: "") }
+    var period by remember(initial) { mutableStateOf(if (initial?.period?.startsWith("Custom:") == true) "Custom range" else initial?.period ?: "This month") }; var name by remember(initial) { mutableStateOf(initial?.title ?: "") }; var nameContains by remember(initial) { mutableStateOf(initial?.nameContains ?: "") }
     val customParts = initial?.period?.removePrefix("Custom:")?.split("..")
     var customStart by remember(initial) { mutableStateOf(customParts?.getOrNull(0) ?: LocalDate.now().withDayOfMonth(1).toString()) }
     var customEnd by remember(initial) { mutableStateOf(customParts?.getOrNull(1) ?: LocalDate.now().toString()) }
@@ -433,8 +433,8 @@ private fun timeGreeting(name: String): String {
     val sourceSummary = if ("All" in sources) "All sources" else if (sources.size > 1) "Selected sources" else sourceValue
     val typeSummary = if ("All" in kinds) "All files" else if (kinds.size > 1) "Selected types" else kindValue
     val suggestion = "$sourceSummary · $typeSummary · ${if (period == "Custom range") "Custom range" else period}"
-    val ruleQuery = folderQuery(SavedView("", "", sourceValue, kindValue, savedPeriod))
-    val matchingFiles = remember(files, sourceValue, kindValue, period, customStart, customEnd) { runCatching { filterFiles(files, ruleQuery, null) }.getOrDefault(emptyList()) }
+    val ruleQuery = folderQuery(SavedView("", "", sourceValue, kindValue, savedPeriod, nameContains = nameContains))
+    val matchingFiles = remember(files, sourceValue, kindValue, period, customStart, customEnd, nameContains) { runCatching { filterFiles(files, ruleQuery, null) }.getOrDefault(emptyList()) }
     fun toggle(current: Set<String>, choice: String): Set<String> = when { choice == "All" -> setOf("All"); "All" in current -> setOf(choice); choice in current -> (current - choice).ifEmpty { setOf("All") }; else -> current + choice }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(if (initial == null) "New virtual folder" else "Edit virtual folder") }, text = { Column(Modifier.heightIn(max = 500.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer) { Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) { Text("${matchingFiles.size} matching files", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer); Text(if (matchingFiles.isEmpty()) "Your choices will preview here." else matchingFiles.take(3).joinToString(" · ") { it.name }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer, maxLines = 2, overflow = TextOverflow.Ellipsis) } }
@@ -443,31 +443,68 @@ private fun timeGreeting(name: String): String {
         Text("Time range", fontWeight = FontWeight.SemiBold); ChipChoices(listOf("Today", "This week", "This month", "Custom range"), period) { period = it }
         if (period == "Custom range") { OutlinedTextField(customStart, { customStart = it }, label = { Text("From · YYYY-MM-DD") }, singleLine = true); OutlinedTextField(customEnd, { customEnd = it }, label = { Text("To · YYYY-MM-DD") }, singleLine = true) }
         OutlinedTextField(name, { name = it }, label = { Text("Folder name") }, placeholder = { Text(suggestion) }, singleLine = true)
+        OutlinedTextField(nameContains, { nameContains = it }, label = { Text("Name contains · optional") }, placeholder = { Text("invoice, project, notes…") }, singleLine = true)
         Text("Folder timer · optional", fontWeight = FontWeight.SemiBold)
         Text("This removes only the saved folder, never your files.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
         ChipChoices(listOf("Never", "Keep for a day", "Keep for a week"), expiry) { expiry = it }
-    } }, confirmButton = { DepthActionButton(if (initial == null) "Create folder" else "Save folder", onClick = { runCatching { LocalDate.parse(customStart); LocalDate.parse(customEnd) }.onSuccess { start -> val end = runCatching { LocalDate.parse(customEnd) }.getOrNull(); if (period != "Custom range" || (end != null && !end.isBefore(start))) { val timerMs = when (expiry) { "Keep for a day" -> 24L * 60 * 60 * 1000; "Keep for a week" -> 7L * 24 * 60 * 60 * 1000; else -> 0L }; onCreate(SavedView(initial?.id ?: "", name.ifBlank { suggestion }, sourceValue, kindValue, savedPeriod, if (timerMs > 0) System.currentTimeMillis() + timerMs else 0L, initial?.archived ?: false, initial?.archiveOnExpiry ?: false)) } } }) }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+    } }, confirmButton = { DepthActionButton(if (initial == null) "Create folder" else "Save folder", onClick = { runCatching { LocalDate.parse(customStart); LocalDate.parse(customEnd) }.onSuccess { start -> val end = runCatching { LocalDate.parse(customEnd) }.getOrNull(); if (period != "Custom range" || (end != null && !end.isBefore(start))) { val timerMs = when (expiry) { "Keep for a day" -> 24L * 60 * 60 * 1000; "Keep for a week" -> 7L * 24 * 60 * 60 * 1000; else -> 0L }; onCreate(SavedView(initial?.id ?: "", name.ifBlank { suggestion }, sourceValue, kindValue, savedPeriod, if (timerMs > 0) System.currentTimeMillis() + timerMs else 0L, initial?.archived ?: false, initial?.archiveOnExpiry ?: false, nameContains.trim())) } } }) }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 @Composable private fun MultiSelectChoices(values: List<String>, selected: Set<String>, choose: (String) -> Unit) { Column(verticalArrangement = Arrangement.spacedBy(1.dp)) { values.chunked(3).forEach { row -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) { row.forEach { value -> FilterChip(value in selected, { choose(value) }, modifier = Modifier.weight(1f), label = { Text(value, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }) }; if (row.size < 3) repeat(3 - row.size) { Spacer(Modifier.weight(1f)) } } } } }
 @Composable private fun ChipChoices(values: List<String>, selected: String, choose: (String) -> Unit) { Column(verticalArrangement = Arrangement.spacedBy(1.dp)) { values.chunked(2).forEach { row -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) { row.forEach { value -> FilterChip(selected == value, { choose(value) }, modifier = Modifier.weight(1f), label = { Text(value, maxLines = 1, softWrap = false, style = MaterialTheme.typography.labelSmall) }) }; if (row.size == 1) Spacer(Modifier.weight(1f)) } } } }
 
 private fun readMedia(context: android.content.Context): List<LocalFile> {
-    val resolver = context.contentResolver; val result = mutableListOf<LocalFile>()
-    val collections = listOf(Triple(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, MediaStore.Images.Media._ID, "image/*"), Triple(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, MediaStore.Video.Media._ID, "video/*"), Triple(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, MediaStore.Audio.Media._ID, "audio/*"))
-    for ((collection, idCol, fallbackMime) in collections) runCatching {
-        resolver.query(collection, arrayOf(idCol, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns.MIME_TYPE, MediaStore.MediaColumns.SIZE, MediaStore.MediaColumns.DATE_MODIFIED, MediaStore.MediaColumns.RELATIVE_PATH), null, null, "${MediaStore.MediaColumns.DATE_MODIFIED} DESC")?.use { cursor ->
-            val idIx = cursor.getColumnIndexOrThrow(idCol); val nameIx = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME); val mimeIx = cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE); val sizeIx = cursor.getColumnIndex(MediaStore.MediaColumns.SIZE); val dateIx = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED); val pathIx = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
-            while (cursor.moveToNext()) { val uri = ContentUris.withAppendedId(collection, cursor.getLong(idIx)); val name = if (nameIx >= 0) cursor.getString(nameIx).orEmpty() else "Untitled"; val mime = if (mimeIx >= 0) cursor.getString(mimeIx) ?: fallbackMime else fallbackMime; val path = if (pathIx >= 0) cursor.getString(pathIx).orEmpty() else ""; val source = sourceFor(path, name); val modified = if (dateIx >= 0) cursor.getLong(dateIx) * 1000 else System.currentTimeMillis(); result += LocalFile(uri, name, mime, if (sizeIx >= 0) cursor.getLong(sizeIx) else 0L, modified, source) }
+    val resolver = context.contentResolver
+    val result = mutableListOf<LocalFile>()
+    val collection = MediaStore.Files.getContentUri("external")
+    val projection = arrayOf(
+        MediaStore.Files.FileColumns._ID,
+        MediaStore.MediaColumns.DISPLAY_NAME,
+        MediaStore.MediaColumns.MIME_TYPE,
+        MediaStore.MediaColumns.SIZE,
+        MediaStore.MediaColumns.DATE_MODIFIED,
+        MediaStore.MediaColumns.RELATIVE_PATH
+    )
+    runCatching {
+        resolver.query(collection, projection, null, null, "${MediaStore.MediaColumns.DATE_MODIFIED} DESC")?.use { cursor ->
+            val idIx = cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)
+            val nameIx = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
+            val mimeIx = cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)
+            val sizeIx = cursor.getColumnIndex(MediaStore.MediaColumns.SIZE)
+            val dateIx = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED)
+            val pathIx = cursor.getColumnIndex(MediaStore.MediaColumns.RELATIVE_PATH)
+            while (cursor.moveToNext()) {
+                if (idIx < 0) continue
+                val name = if (nameIx >= 0) cursor.getString(nameIx).orEmpty() else "Untitled"
+                val mime = if (mimeIx >= 0) cursor.getString(mimeIx).orEmpty().ifBlank { mimeFor(name) } else mimeFor(name)
+                if (!isVisibleFile(name, mime)) continue
+                val path = if (pathIx >= 0) cursor.getString(pathIx).orEmpty() else ""
+                val modified = if (dateIx >= 0) cursor.getLong(dateIx) * 1000L else System.currentTimeMillis()
+                result += LocalFile(ContentUris.withAppendedId(collection, cursor.getLong(idIx)), name, mime, if (sizeIx >= 0) cursor.getLong(sizeIx) else 0L, modified, sourceFor(path, name))
+            }
         }
     }
     return result
 }
+private fun isVisibleFile(name: String, mime: String?): Boolean {
+    val ext = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
+    return mime?.startsWith("image/") == true || mime?.startsWith("audio/") == true || mime?.startsWith("video/") == true ||
+        ext in setOf("pdf", "doc", "docx", "odt", "rtf", "txt", "md", "xls", "xlsx", "csv", "ods", "ppt", "pptx", "odp", "zip", "tar", "gz", "rar", "7z")
+}
+
 private fun scanTree(context: android.content.Context, tree: Uri): List<LocalFile> {
     val root = DocumentFile.fromTreeUri(context, tree) ?: return emptyList(); val output = mutableListOf<LocalFile>(); val queue = ArrayDeque<Pair<DocumentFile, String>>(); queue.add(root to root.name.orEmpty()); var visited = 0
-    while (queue.isNotEmpty() && visited < 20_000) { val (node, relativePath) = queue.removeFirst(); visited++; if (node.isDirectory) node.listFiles().forEach { child -> val name = child.name.orEmpty(); val childPath = listOf(relativePath, name).filter(String::isNotBlank).joinToString("/"); if (child.isDirectory) queue.add(child to childPath) else if (child.isFile) { val displayName = child.name ?: "Untitled"; val modified = child.lastModified().takeIf { it > 0 } ?: System.currentTimeMillis(); output += LocalFile(child.uri, displayName, child.type ?: mimeFor(displayName), child.length(), modified, sourceFor(childPath, displayName)) } } }
+    while (queue.isNotEmpty() && visited < 20_000) { val (node, relativePath) = queue.removeFirst(); visited++; if (node.isDirectory) node.listFiles().forEach { child -> val name = child.name.orEmpty(); val childPath = listOf(relativePath, name).filter(String::isNotBlank).joinToString("/"); if (child.isDirectory) queue.add(child to childPath) else if (child.isFile) { val displayName = child.name ?: "Untitled"; val mime = child.type ?: mimeFor(displayName); if (isVisibleFile(displayName, mime)) { val modified = child.lastModified().takeIf { it > 0 } ?: System.currentTimeMillis(); output += LocalFile(child.uri, displayName, mime, child.length(), modified, sourceFor(childPath, displayName)) } } } }
     return output
 }
-private fun mimeFor(name: String): String = when(name.substringAfterLast('.', "").lowercase()) { "pdf" -> "application/pdf"; "txt" -> "text/plain"; "md" -> "text/markdown"; "zip" -> "application/zip"; "doc" -> "application/msword"; "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"; else -> "application/octet-stream" }
+private fun mimeFor(name: String): String = when(name.substringAfterLast('.', "").lowercase(Locale.ROOT)) {
+    "pdf" -> "application/pdf"; "txt" -> "text/plain"; "md" -> "text/markdown"; "zip" -> "application/zip";
+    "doc" -> "application/msword"; "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    "xls" -> "application/vnd.ms-excel"; "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; "csv" -> "text/csv";
+    "ppt" -> "application/vnd.ms-powerpoint"; "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    "odt" -> "application/vnd.oasis.opendocument.text"; "ods" -> "application/vnd.oasis.opendocument.spreadsheet"; "odp" -> "application/vnd.oasis.opendocument.presentation";
+    "rtf" -> "application/rtf"; "tar" -> "application/x-tar"; "gz" -> "application/gzip";
+    else -> "application/octet-stream"
+}
 private fun conversionActions(file: LocalFile): List<String> = when {
     file.mime.startsWith("image/") -> listOf("PNG", "JPEG", "WebP", "Image → PDF", "Create ZIP")
     file.mime == "application/pdf" -> listOf("PDF text → TXT", "PDF pages → ZIP", "Create ZIP")
@@ -503,7 +540,21 @@ private fun sizeMatches(bytes: Long, value: String): Boolean { val m = Regex("([
 private fun folderQuery(v: SavedView): String {
     val sources = if (v.source == "All") emptyList() else v.source.split(',').map { when (it.trim().lowercase(Locale.ROOT)) { "whatsapp" -> "whatsapp"; "telegram" -> "telegram"; "camera" -> "camera"; "screenshot" -> "screenshot"; "download" -> "download"; "other" -> "other"; else -> it.trim().lowercase(Locale.ROOT) } }
     val types = if (v.kind == "All") emptyList() else v.kind.split(',').flatMap { label -> when (label.trim().lowercase(Locale.ROOT)) { "docs", "documents" -> listOf("pdf", "document", "spreadsheet", "presentation"); "images", "image" -> listOf("image"); "videos", "video" -> listOf("video"); "audio" -> listOf("audio"); "pdfs", "pdf" -> listOf("pdf"); "archives", "archive" -> listOf("archive"); "other" -> listOf("other"); else -> listOf(label.trim().lowercase(Locale.ROOT).removeSuffix("s")) } }.distinct()
-    return listOfNotNull(sources.takeIf { it.isNotEmpty() }?.let { "source:${it.joinToString(",")}" }, types.takeIf { it.isNotEmpty() }?.let { "type:${it.joinToString(",")}" }, when { v.period.startsWith("Custom:") -> "date:${v.period.removePrefix("Custom:")}"; v.period == "Today" -> "date:today"; v.period == "This week" -> "date:this-week"; v.period == "This month" -> "date:this-month"; else -> null }).joinToString(" ")
+    val name = v.nameContains.trim().replace("\"", "")
+    return listOfNotNull(
+        sources.takeIf { it.isNotEmpty() }?.let { "source:${it.joinToString(",")}" },
+        types.takeIf { it.isNotEmpty() }?.let { "type:${it.joinToString(",")}" },
+        name.takeIf { it.isNotEmpty() }?.let { "name:\"$it\"" },
+        when {
+            v.period.startsWith("Custom:") -> "date:${v.period.removePrefix("Custom:")}"
+            v.period == "Today" -> "date:today"
+            v.period == "This week" -> "date:this-week"
+            v.period == "This month" -> "date:this-month"
+            v.period == "Last week" -> "date:last-week"
+            v.period == "Last month" -> "date:last-month"
+            else -> null
+        }
+    ).joinToString(" ")
 }
 private fun periodLabel(value: String): String = if (value.startsWith("Custom:")) "Custom · ${value.removePrefix("Custom:").replace("..", " – ")}" else value
 private fun openFile(context: android.content.Context, file: LocalFile) { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(file.uri, file.mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) } }
@@ -518,7 +569,7 @@ private fun displayTypes(value: String): String {
     types.forEach { type -> when (type) { "document", "spreadsheet", "presentation" -> if ("Docs" !in result) result += "Docs"; "image" -> result += "Images"; "video" -> result += "Videos"; "audio" -> result += "Audio"; "pdf" -> if ("Docs" !in result) result += "PDFs"; "archive" -> result += "Archives"; "other" -> result += "Other" } }
     return result.distinct().joinToString(",").ifBlank { "All" }
 }
-private fun loadViews(prefs: android.content.SharedPreferences): List<SavedView> = prefs.getStringSet("views", emptySet()).orEmpty().mapNotNull { raw -> raw.split("|", limit = 8).takeIf { it.size >= 5 }?.let { SavedView(it[0], it[1], it[2], it[3], it[4], it.getOrNull(5)?.toLongOrNull() ?: 0L, it.getOrNull(6)?.toBoolean() ?: false, it.getOrNull(7)?.toBoolean() ?: false) } }
+private fun loadViews(prefs: android.content.SharedPreferences): List<SavedView> = prefs.getStringSet("views", emptySet()).orEmpty().mapNotNull { raw -> raw.split("|", limit = 9).takeIf { it.size >= 5 }?.let { SavedView(it[0], it[1], it[2], it[3], it[4], it.getOrNull(5)?.toLongOrNull() ?: 0L, it.getOrNull(6)?.toBoolean() ?: false, it.getOrNull(7)?.toBoolean() ?: false, it.getOrNull(8).orEmpty()) } }
 
 @Composable private fun TimerDialog(folder: SavedView, onDismiss: () -> Unit, onSet: (Long) -> Unit, onClear: () -> Unit) {
     AlertDialog(onDismissRequest = onDismiss, title = { Text("Folder timer") }, text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Text("Only this saved folder expires. Original files are never touched."); Text("Choose when to remove this view:", style = MaterialTheme.typography.bodySmall) } }, confirmButton = { Row { TextButton(onClick = { onSet(60L * 60 * 1000) }) { Text("1 hour") }; TextButton(onClick = { onSet(24L * 60 * 60 * 1000) }) { Text("1 day") }; TextButton(onClick = { onSet(7L * 24 * 60 * 60 * 1000) }) { Text("1 week") } } }, dismissButton = { Row { if (folder.expiresAt > 0) TextButton(onClick = onClear) { Text("Cancel timer") }; TextButton(onClick = onDismiss) { Text("Close") } } })
@@ -544,7 +595,7 @@ private suspend fun loadViewsFromDatabase(context: android.content.Context): Lis
         return db.folderDao().getAll().mapNotNull { folder ->
             val rule = rules[folder.ruleId ?: folder.id] ?: return@mapNotNull null
             val clauses = rule.query.split(Regex("\\s+")).filter { it.contains(':') }.associate { it.substringBefore(':') to it.substringAfter(':') }
-            SavedView(folder.id, folder.name, clauses["source"]?.let(::displaySource) ?: "All", clauses["type"]?.let(::displayTypes) ?: "All", when (val date = clauses["date"]) { "today" -> "Today"; "this-week" -> "This week"; else -> if (date?.contains("..") == true) "Custom:$date" else "This month" }, folder.expiresAtMillis ?: 0L, folder.archivedUntilMillis != null, folder.archiveOnExpiry)
+            SavedView(folder.id, folder.name, clauses["source"]?.let(::displaySource) ?: "All", clauses["type"]?.let(::displayTypes) ?: "All", when (val date = clauses["date"]) { "today" -> "Today"; "this-week" -> "This week"; "last-week" -> "Last week"; "last-month" -> "Last month"; else -> if (date?.contains("..") == true) "Custom:$date" else "This month" }, folder.expiresAtMillis ?: 0L, folder.archivedUntilMillis != null, folder.archiveOnExpiry, clauses["name"]?.trim('"').orEmpty())
         }
     } finally { db.close() }
 }

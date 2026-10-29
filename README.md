@@ -10,7 +10,7 @@ Almara is a native Android app built with Kotlin and Jetpack Compose. It indexes
 
 ## Current build status
 
-This branch contains the first full-v1 implementation pass derived from the [product requirements](docs/PRD.md). It is an **unsigned release candidate**, not a tested/public v1 release: GitHub Actions and real-device testing must pass before publishing a `v1.0.0` tag.
+This branch contains the v1 implementation pass derived from the [product requirements](docs/PRD.md). It remains an unsigned release candidate; real-device testing is still required before publishing a public release.
 
 Implemented in this MVP:
 
@@ -26,7 +26,7 @@ Implemented in this MVP:
 - Platform-independent query, file-type, source, date, and size domain helpers with JUnit tests.
 - GitHub Actions workflow builds a debug APK and uploads it as an artifact; publishing a GitHub Release attaches the APK.
 
-Still incomplete against the full PRD: manually curated folders, duplicate detection (listed in the release plan, although the feature section labels it v1.5), the remaining radial actions (rename, add-to-folder, multi-select ZIP, and delete), Hindi UI localization, and integration/Compose/performance tests. The worker currently reconciles a full scan rather than demonstrating incremental indexing on large libraries. Extraction, search grammar, notification behavior, encryption at rest, SAF permission restoration, widget rendering, low-storage handling, and APK installation still need real-device verification. This is a device-test candidate, not a claim of complete v1 or Play Store readiness.
+The current release focuses on reliable all-file indexing, document/spreadsheet visibility, unified search behavior, name-aware smart folders, and clear virtual-folder semantics. Manual collections, duplicate detection, Hindi localization, and full integration/Compose/performance coverage remain follow-up work. The worker currently reconciles a full scan rather than demonstrating incremental indexing on large libraries. Extraction, search grammar, notification behavior, encryption at rest, SAF permission restoration, widget rendering, low-storage handling, and APK installation still need real-device verification. This is a device-test candidate, not a claim of complete v1 or Play Store readiness.
 
 ## Privacy and permissions
 
