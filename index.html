@@ -18,10 +18,44 @@
 <meta property="og:image" content="https://vijayarkananduri.github.io/Almara/assets/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Almara, private offline file finder for Android">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Almara sedha karo."><meta name="twitter:description" content="Private, offline, open source file finder for Android."><meta name="twitter:image" content="https://vijayarkananduri.github.io/Almara/assets/og.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Almara","alternateName":"Smart Sedha","operatingSystem":"Android","applicationCategory":"UtilitiesApplication","description":"Private, offline Android app that finds files by date, source and type using virtual folders. Originals are never moved.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://opensource.org/licenses/MIT","downloadUrl":"https://github.com/vijayarkananduri/Almara/releases","url":"https://vijayarkananduri.github.io/Almara/","author":{"@type":"Person","name":"Vijayarka Nanduri","url":"https://vijayarka.netlify.app/"}}</script>
+<script>try{var t=localStorage.getItem('almara-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Josefin+Sans:wght@400;600;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <style>
+html{scroll-behavior:smooth}
+
+/* ---------- NAV: hard-kill every floating / sticky / cloned navbar ---------- */
+header nav,
+nav.top,
+nav.nav,
+.navbar,
+.float-nav,
+.nav-float,
+[class*="floating-nav"],
+[class*="nav-floating"]{
+  position: static !important;
+  inset: auto !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  translate: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  z-index: auto !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+}
+/* old theme toggle stays out of the way even if site.js tries to show it */
+.thb{display:none !important}
+
 .hg{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;padding:18px 0 56px}
 .hero .ic path,.mic .ic path,.b .ic path,.fl path{stroke-dashoffset:0}
 .stage{position:relative}.fl:nth-of-type(1){left:-6%;top:8%}.fl:nth-of-type(2){right:-2%;top:2%;animation-delay:-2s}.fl:nth-of-type(3){left:-2%;bottom:10%;animation-delay:-4s}.fl:nth-of-type(4){right:0;bottom:6%;animation-delay:-1s}
@@ -42,16 +76,47 @@
 .cnt{font:700 3.2rem 'Josefin Sans';color:var(--l4);line-height:1}.cnt+small{color:var(--mut)}.grp{margin:12px 0 4px;font:700 .9rem 'Josefin Sans'}.chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:6px 12px;font:600 .85rem 'Josefin Sans';cursor:pointer;transition:.15s}.chips button:hover{border-color:var(--l4)}.chips button[aria-pressed=true]{background:var(--l4);border-color:var(--l4);color:#fff}
 .note{font-size:.78rem;color:var(--mut);margin:12px 0 0}
-.voice-section{padding-top:24px;padding-bottom:24px}.say{max-width:820px;margin:auto;background:var(--hero);color:#fff;border-radius:22px;padding:20px 24px;display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}.mic{width:62px;height:62px;border-radius:50%;border:0;background:var(--gold);color:#2a0e04;cursor:pointer;position:relative;display:grid;place-items:center}.mic .ic{width:30px;height:30px}
-.mic.on:after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--gold);animation:p 1s infinite}@keyframes p{to{transform:scale(1.5);opacity:0}}
-.voice-copy{min-width:0}.q{font:400 1.35rem 'Josefin Sans';min-height:1.5em;margin-top:4px}.res{display:flex;gap:8px;flex-wrap:wrap;min-height:28px}.res span{background:#a4512a;border-radius:10px;padding:4px 12px;font:600 .88rem 'Josefin Sans';animation:in .3s both}@keyframes in{from{opacity:0;transform:translateY(8px)}}
-.soon{display:inline-block;background:var(--gold);color:#2a0e04;font:700 .78rem 'Josefin Sans';border-radius:8px;padding:2px 10px}
-@media(max-width:800px){.hg{grid-template-columns:1fr}.phone{transform:none}.voice-section{padding:18px 0}.say{padding:18px;gap:14px}.fl{display:none}}
+
+/* ---------- voice card: compact, no dead space ---------- */
+.say{background:var(--hero);color:#fff;border-radius:24px;padding:22px 26px;display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;box-shadow:0 18px 40px rgba(0,0,0,.14)}
+.say-body{min-width:0}
+.say-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 3px}
+.say-head h3{margin:0;font:700 1.05rem 'Josefin Sans',sans-serif;letter-spacing:.01em;color:#fff}
+.soon{display:inline-block;background:var(--gold);color:#2a0e04;font:700 .72rem 'Josefin Sans';border-radius:7px;padding:2px 9px;line-height:1.6;white-space:nowrap}
+.mic{width:62px;height:62px;border-radius:50%;border:0;background:var(--gold);color:#2a0e04;cursor:pointer;position:relative;display:grid;place-items:center;flex:none;transition:transform .18s}
+.mic:hover{transform:scale(1.05)}
+.mic .ic{width:28px;height:28px}
+.mic.on:after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--gold);animation:p 1s infinite}
+@keyframes p{to{transform:scale(1.5);opacity:0}}
+.q{font:400 1.02rem/1.45 'Josefin Sans',sans-serif;margin:0;color:#f3ddd1;min-height:0}
+.q.live{color:#fff}
+.res{display:flex;gap:7px;flex-wrap:wrap}
+.res:not(:empty){margin-top:11px}
+.res span{background:#a4512a;border-radius:9px;padding:4px 12px;font:600 .84rem 'Josefin Sans',sans-serif;animation:in .3s both}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+
+/* ---------- floating scroll-to-top only ---------- */
+.totop{position:fixed;right:18px;bottom:18px;z-index:80;width:46px;height:46px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:var(--hero,#7a2603);color:#fff;box-shadow:0 10px 26px rgba(0,0,0,.28);opacity:0;pointer-events:none;transform:translateY(14px) scale(.9);transition:opacity .28s,transform .28s,background .2s}
+.totop.on{opacity:1;pointer-events:auto;transform:none}
+.totop:hover{background:var(--l4,#a4512a)}
+.totop:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+@media(max-width:800px){
+  .hg{grid-template-columns:1fr}
+  .phone{transform:none}
+  .say{padding:18px;gap:14px;border-radius:20px}
+  .mic{width:56px;height:56px}
+  .mic .ic{width:25px;height:25px}
+  .q{font-size:.95rem}
+  .fl{display:none}
+  .totop{right:14px;bottom:14px;width:44px;height:44px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.totop{transition:none}}
 </style>
 </head>
 <body>
 <header class="hero" id="top"><div class="key"></div>
-<div class="w"><nav class="top"><a class="mark" href="#top"><img src="assets/logo.jpg" alt="Almara logo" width="48" height="48"></a><div class="nav-links"><a href="#features">Features</a><a href="#build">Folders</a><a href="help.html">Guide</a></div></nav>
+<div class="w"><nav class="top"><a class="mark" href="#top"><img src="assets/logo.jpg" alt="" width="30" height="30">ALMARA</a><div><a href="#features">Features</a><a href="#build">Folders</a><a href="help.html">Guide</a><button class="thb" id="th2" type="button" hidden>Theme</button></div></nav>
 <div class="hg"><div>
 <div class="script">Smart Sedha.</div><h1>Almara sedha karo.</h1>
 <p class="lead">Your phone is a messy cupboard. Find any file by when you got it, where it came from, or what it is. Nothing gets moved. Nothing leaves your phone.</p>
@@ -96,7 +161,13 @@
 <p>Almara has no account, no cloud sync and no analytics. The app declares no internet permission, so it has no way to send your files anywhere. The source is open under the MIT license.</p>
 <div class="pf"><div class="rv"><span data-i="nowifi"></span><h3>No internet</h3><p>No network permission in the app.</p></div><div class="rv"><span data-i="folder"></span><h3>Stays put</h3><p>Originals are never moved, renamed or copied.</p></div><div class="rv"><span data-i="shield"></span><h3>Encrypted index</h3><p>The index and saved views live on your phone.</p></div><div class="rv"><span data-i="code"></span><h3>Open source</h3><p><a href="https://github.com/vijayarkananduri/Almara">Read every line.</a></p></div></div></div></section>
 
-<section class="sec voice-section"><div class="w"><div class="say"><button class="mic" id="mic" aria-label="Try a sample voice query"><span data-i="mic"></span></button><div class="voice-copy"><span class="soon">Coming soon</span><div class="q" id="q">Try a sample voice search</div><div class="res" id="res"></div></div></div></div></section>
+<section class="sec"><div class="w"><div class="say">
+<button class="mic" id="mic" type="button" aria-label="Try a sample voice query"><span data-i="mic"></span></button>
+<div class="say-body">
+<div class="say-head"><h3>Voice search</h3><span class="soon">Coming soon</span></div>
+<p class="q" id="q">Tap the mic and say what you need.</p>
+<div class="res" id="res"></div>
+</div></div></div></section>
 
 <section class="sec" id="get" style="padding-top:0"><div class="w"><h2>Get Almara.</h2>
 <p>Free and open source. Download the latest APK from GitHub Releases. Installing outside the Play Store? Android may ask you to allow it once. The guide shows where.</p>
@@ -106,6 +177,10 @@
 <footer><div class="key"></div><div class="w"><p class="script" style="margin:0">Maa would be proud.</p>
 <p class="ui"><a href="help.html">Guide</a><a href="https://github.com/vijayarkananduri/Almara">Source</a><a href="https://github.com/vijayarkananduri/Almara/releases">Releases</a><a href="https://vijayarka.netlify.app/">Built by Vijayarka</a></p>
 <small>© 2026 Vijayarka Nanduri. Almara is released under the MIT license. Android is a trademark of Google LLC. This project is not affiliated with Google.</small></div></footer>
+
+<button class="totop" id="totop" type="button" aria-label="Back to top">
+<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
 
 <script src="assets/site.js"></script>
 <script>
@@ -122,9 +197,53 @@ new IntersectionObserver((es,o)=>es.forEach(e=>{if(e.isIntersecting){cup.classLi
 const O={s:['All','WhatsApp','Telegram','Camera','Screenshot','Download'],t:['All','Images','Videos','PDFs','Docs'],r:['Today','This week','This month'],e:['Never','1 hour','1 day','1 week']},F={s:[1,.38,.08,.22,.12,.1],t:[1,.55,.08,.04,.06],r:[.004,.03,.12],e:[1,1,1,1]},S={s:0,t:0,r:2,e:0};
 function upd(){let v=4915;for(const k in F)v*=F[k][S[k]];$('#n').textContent=Math.max(1,Math.round(v)).toLocaleString()}
 document.querySelectorAll('.chips').forEach(c=>{const g=c.dataset.g;O[g].forEach((t,i)=>{const b=document.createElement('button');b.textContent=t;b.setAttribute('aria-pressed',S[g]==i);b.onclick=()=>{S[g]=i;c.querySelectorAll('button').forEach((x,j)=>x.setAttribute('aria-pressed',j==i));upd()};c.append(b)})});upd();
+
+/* voice demo */
 const V=[['Images from today',['Images','Today']],['WhatsApp PDFs from last week',['WhatsApp','PDFs','Last week']],['Everything from Aug 15 till today',['Aug 15 to today','All files']]];let vi=0,tm;
-$('#mic').onclick=()=>{const [s,c]=V[vi++%V.length],q=$('#q'),r=$('#res'),m=$('#mic');clearInterval(tm);r.innerHTML='';q.textContent='';m.classList.add('on');let i=0;
-tm=setInterval(()=>{q.textContent=s.slice(0,++i);if(i>=s.length){clearInterval(tm);m.classList.remove('on');c.forEach(x=>r.insertAdjacentHTML('beforeend',`<span>${x}</span>`));r.insertAdjacentHTML('beforeend','<span>Show results</span><span>Make folder</span>')}},45)};
+const qEl=$('#q'),rEl=$('#res'),micEl=$('#mic');
+micEl.onclick=()=>{const [s,c]=V[vi++%V.length];clearInterval(tm);rEl.innerHTML='';qEl.textContent='';qEl.classList.add('live');micEl.classList.add('on');let i=0;
+tm=setInterval(()=>{qEl.textContent=s.slice(0,++i);if(i>=s.length){clearInterval(tm);micEl.classList.remove('on');c.forEach(x=>rEl.insertAdjacentHTML('beforeend',`<span>${x}</span>`));rEl.insertAdjacentHTML('beforeend','<span>Show results</span><span>Make folder</span>')}},45)};
+
+/* scroll to top */
+const totop=$('#totop');
+const onScroll=()=>totop.classList.toggle('on',window.scrollY>420);
+addEventListener('scroll',onScroll,{passive:true});onScroll();
+totop.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+
+/* ---------- FINAL KILL: remove any floating/cloned navbar site.js injects ---------- */
+(function(){
+  const kill = el => {
+    const s = el.style;
+    s.setProperty('position','static','important');
+    s.setProperty('inset','auto','important');
+    s.setProperty('top','auto','important');
+    s.setProperty('left','auto','important');
+    s.setProperty('right','auto','important');
+    s.setProperty('bottom','auto','important');
+    s.setProperty('transform','none','important');
+    s.setProperty('translate','none','important');
+    s.setProperty('box-shadow','none','important');
+    s.setProperty('background','transparent','important');
+    s.setProperty('backdrop-filter','none','important');
+    s.setProperty('-webkit-backdrop-filter','none','important');
+    s.setProperty('z-index','auto','important');
+  };
+  const clean = () => {
+    // 1) any nav that is not inside <header> is a cloned/floating nav → delete it
+    document.querySelectorAll('body nav, body .navbar, body [class*="floating-nav"], body [class*="nav-float"]').forEach(n => {
+      if (!n.closest('header')) n.remove();
+    });
+    // 2) anything that still computes to fixed/sticky gets flattened
+    document.querySelectorAll('header nav, nav.top, .navbar, .float-nav, .nav-float, [class*="floating-nav"], [class*="nav-float"]').forEach(el => {
+      const cs = getComputedStyle(el);
+      if (cs.position === 'fixed' || cs.position === 'sticky') kill(el);
+    });
+  };
+  clean();
+  addEventListener('scroll', clean, {passive:true});
+  addEventListener('resize', clean);
+  new MutationObserver(clean).observe(document.body, {childList:true, subtree:true});
+})();
 </script>
 </body>
 </html>
